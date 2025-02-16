@@ -1,6 +1,6 @@
-// home_screen_guest.dart
 import 'package:flutter/material.dart';
 import 'navigation/guest_navigation.dart';
+import 'setting_screen_guest.dart'; // นำเข้า SettingScreenGuest
 
 class GuestHomePage extends StatefulWidget {
   const GuestHomePage({super.key});
@@ -16,22 +16,31 @@ class GuestHomePageState extends State<GuestHomePage> {
     Center(child: Text('Home Page', style: TextStyle(fontSize: 24))),
     Center(child: Text('Gallery Page', style: TextStyle(fontSize: 24))),
     Center(child: Text('Camera Page', style: TextStyle(fontSize: 24))),
-    Center(child: Text('Setting Page', style: TextStyle(fontSize: 24))),
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == 3) {
+      // ถ้ากด Setting ให้ไปหน้า SettingScreenGuest
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SettingScreenGuest()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6E3), // พื้นหลังสีครีม
-      body: _pages[_selectedIndex],
+      body: _selectedIndex < _pages.length
+          ? _pages[_selectedIndex]
+          : const Center(
+              child: Text('Page not found', style: TextStyle(fontSize: 24))),
       bottomNavigationBar: GuestNavigation(
-        // ใช้ GuestNavigation ที่นี่
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
       ),
