@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'home_screen_guest.dart'; // นำเข้าหน้า GuestHomePage ที่ถูกต้อง
 import 'register_screen.dart';
 
-class LoginScreenMember extends StatelessWidget {
-  LoginScreenMember({super.key});
+class LoginScreenGuest extends StatelessWidget {
+  LoginScreenGuest({super.key});
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  // ฟังก์ชันแสดง Dialog สำหรับแสดงข้อความผิดพลาด
   void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
@@ -26,15 +26,6 @@ class LoginScreenMember extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  "",
-                  style: TextStyle(
-                    fontFamily: 'Questrial',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.red,
-                  ),
-                ),
                 const SizedBox(height: 10),
                 Text(
                   message,
@@ -88,9 +79,7 @@ class LoginScreenMember extends StatelessWidget {
                 const SizedBox(height: 40),
                 TextField(
                   controller: usernameController,
-                  style: TextStyle(
-                    color: const Color(0xFF22512F), // สีข้อความเป็นสีเขียว
-                  ),
+                  style: TextStyle(color: Color(0xFF22512F)),
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: const Color(0xFFFFF2D8),
@@ -110,9 +99,7 @@ class LoginScreenMember extends StatelessWidget {
                 TextField(
                   controller: passwordController,
                   obscureText: true,
-                  style: TextStyle(
-                    color: const Color(0xFF22512F), // สีข้อความเป็นสีเขียว
-                  ),
+                  style: TextStyle(color: Color(0xFF22512F)),
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: const Color(0xFFFFF2D8),
@@ -176,8 +163,7 @@ class LoginScreenMember extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                  RegisterScreen()), // ไปที่หน้าลงทะเบียน
+                              builder: (context) => RegisterScreen()),
                         );
                       },
                       child: const Text('Register',
@@ -197,6 +183,30 @@ class LoginScreenMember extends StatelessWidget {
                         fontSize: 12,
                         fontFamily: 'Questrial'),
                   ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFF2D8),
+                    foregroundColor: const Color(0xFF22512F),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 50, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              GuestHomePage()), // นำทางไปหน้า GuestHomePage
+                    );
+                  },
+                  child: const Text('Guest',
+                      style: TextStyle(
+                          fontFamily: 'Questrial',
+                          fontWeight: FontWeight.bold)),
                 ),
               ],
             ),

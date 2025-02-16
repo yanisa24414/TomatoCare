@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
+import 'home_screen_guest.dart';
+import 'home_screen_member.dart';
 
 class LoginScreenGuest extends StatelessWidget {
   LoginScreenGuest({super.key});
@@ -142,7 +144,12 @@ class LoginScreenGuest extends StatelessWidget {
                           _showErrorDialog(
                               context, "Please provide your password.");
                         } else {
-                          // ใส่โค้ดตรวจสอบข้อมูลผู้ใช้ที่นี่
+                          // เมื่อกรอกข้อมูลครบแล้ว นำไปยังหน้า HomeScreenMember
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MemberHomePage()),
+                          );
                         }
                       },
                       child: const Text('Sign In',
@@ -196,7 +203,12 @@ class LoginScreenGuest extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => GuestHomePage()),
+                    );
+                  },
                   child: const Text('Guest',
                       style: TextStyle(
                           fontFamily: 'Questrial',

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'splash_screen.dart'; // Import splash screen
-import 'home_screen_guest.dart'; // Import หน้า home สำหรับ guest
+// Import หน้า home สำหรับ guest
 
 void main() {
   runApp(const MyApp());

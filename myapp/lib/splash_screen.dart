@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen_member.dart';
+import 'login_screen_guest.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,7 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => MemberHomePage(),
+            builder: (context) => LoginScreenGuest(),
           ),
         );
       }
