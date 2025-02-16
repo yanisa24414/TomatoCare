@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreenGuest extends StatelessWidget {
+  LoginScreenGuest({super.key});
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
