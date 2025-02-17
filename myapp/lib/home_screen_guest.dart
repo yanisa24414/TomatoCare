@@ -20,7 +20,6 @@ class GuestHomePageState extends State<GuestHomePage> {
 
   void _onItemTapped(int index) {
     if (index == 3) {
-      // ถ้ากด Setting ให้ไปหน้า SettingScreenGuest
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const SettingScreenGuest()),
