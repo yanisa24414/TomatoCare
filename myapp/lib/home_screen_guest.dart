@@ -35,7 +35,7 @@ class GuestHomePageState extends State<GuestHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF6E3), // พื้นหลังสีครีม
+      backgroundColor: const Color(0xFFFDF6E3),
       body: _selectedIndex < _pages.length
           ? _pages[_selectedIndex]
           : const Center(
