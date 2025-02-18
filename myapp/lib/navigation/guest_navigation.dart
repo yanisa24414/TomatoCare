@@ -15,7 +15,7 @@ class GuestNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF7D2424), // สีแดงเข้ม
+        color: Color(0xFF7D2424),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),

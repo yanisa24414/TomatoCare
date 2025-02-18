@@ -9,7 +9,7 @@ class SettingScreenGuest extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreenGuest> {
-  int _selectedIndex = 3; // ตั้งค่า index ให้ตรงกับ Setting (index 3)
+  final int _selectedIndex = 3; // เปลี่ยนเป็น final
 
   void _onItemTapped(int index) {
     switch (index) {
