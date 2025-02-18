@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'splash_screen.dart';
+import 'login_screen_guest.dart';
 import 'home_screen_guest.dart';
 import 'gallery_screen.dart';
 import 'camera_screen.dart';
 import 'setting_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp()); // ❌ ลบ const ออก
 }
 
 class MyApp extends StatelessWidget {
@@ -15,12 +17,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/home',
+      initialRoute: '/splash',
       routes: {
-        '/home': (context) => const HomeScreen(),
-        '/gallery': (context) => const GalleryScreen(),
-        '/camera': (context) => const CameraScreen(),
-        '/settings': (context) => const SettingsScreen(),
+        '/splash': (context) => const SplashScreen(),
+        '/login': (context) => LoginScreenGuest(), // ❌ ลบ const ออก
+        '/home': (context) => HomeScreen(),
+        '/gallery': (context) => GalleryScreen(),
+        '/camera': (context) => CameraScreen(),
+        '/settings': (context) => SettingsScreen(),
       },
     );
   }

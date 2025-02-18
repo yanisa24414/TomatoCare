@@ -9,7 +9,7 @@ class CameraScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 170, 130, 21),
       body: const Center(
-        child: Text('Camera Page', style: TextStyle(fontSize: 24)),
+        child: Text('Camera ', style: TextStyle(fontSize: 24)),
       ),
       bottomNavigationBar: const GuestNavigation(selectedIndex: 2),
     );

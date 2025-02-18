@@ -206,7 +206,7 @@ class LoginScreenGuest extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GuestHomePage()),
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
                     );
                   },
                   child: const Text('Guest',
