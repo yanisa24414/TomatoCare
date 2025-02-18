@@ -200,7 +200,7 @@ class LoginScreenGuest extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (context) =>
-                              GuestHomePage()), // นำทางไปหน้า GuestHomePage
+                              HomeScreen()), // นำทางไปหน้า GuestHomePage
                     );
                   },
                   child: const Text('Guest',

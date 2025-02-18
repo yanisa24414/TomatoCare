@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'splash_screen.dart'; // Import splash screen
-// Import หน้า home สำหรับ guest
+import 'home_screen_guest.dart';
+import 'gallery_screen.dart';
+import 'camera_screen.dart';
+import 'setting_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,9 +15,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'TomatoCare',
-      theme: ThemeData(primarySwatch: Colors.red),
-      home: const SplashScreen(), // ใช้ SplashScreen เป็นหน้าหลัก
+      initialRoute: '/home',
+      routes: {
+        '/home': (context) => const HomeScreen(),
+        '/gallery': (context) => const GalleryScreen(),
+        '/camera': (context) => const CameraScreen(),
+        '/settings': (context) => const SettingsScreen(),
+      },
     );
   }
 }
