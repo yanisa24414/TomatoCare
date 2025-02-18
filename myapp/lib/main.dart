@@ -7,7 +7,7 @@ import 'camera_screen.dart';
 import 'setting_screen.dart';
 
 void main() {
-  runApp(MyApp()); // ❌ ลบ const ออก
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
