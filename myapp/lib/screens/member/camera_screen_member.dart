@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../navigation/guest_navigation.dart';
+import '../../../navigation/member_navigation.dart';
 
 class CameraScreenMember extends StatelessWidget {
   const CameraScreenMember({super.key});
@@ -9,9 +9,9 @@ class CameraScreenMember extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6E3),
       body: const Center(
-        child: Text('Camera ', style: TextStyle(fontSize: 24)),
+        child: Text('Camera member ', style: TextStyle(fontSize: 24)),
       ),
-      bottomNavigationBar: const GuestNavigation(selectedIndex: 2),
+      bottomNavigationBar: const MemberNavigation(selectedIndex: 2),
     );
   }
 }

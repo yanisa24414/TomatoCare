@@ -9,7 +9,7 @@ class CameraScreenGuest extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6E3),
       body: const Center(
-        child: Text('Camera ', style: TextStyle(fontSize: 24)),
+        child: Text('Camera guest ', style: TextStyle(fontSize: 24)),
       ),
       bottomNavigationBar: const GuestNavigation(selectedIndex: 2),
     );

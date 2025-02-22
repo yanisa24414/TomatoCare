@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../navigation/guest_navigation.dart';
+import '../../../navigation/member_navigation.dart';
 
 class GalleryScreenMember extends StatelessWidget {
   const GalleryScreenMember({super.key});
@@ -9,9 +9,9 @@ class GalleryScreenMember extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6E3),
       body: const Center(
-        child: Text('Gallery Page', style: TextStyle(fontSize: 24)),
+        child: Text('Gallery member', style: TextStyle(fontSize: 24)),
       ),
-      bottomNavigationBar: const GuestNavigation(selectedIndex: 1),
+      bottomNavigationBar: const MemberNavigation(selectedIndex: 1),
     );
   }
 }

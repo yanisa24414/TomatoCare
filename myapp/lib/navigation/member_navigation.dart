@@ -6,22 +6,22 @@ class MemberNavigation extends StatelessWidget {
   const MemberNavigation({super.key, required this.selectedIndex});
 
   void _navigateToScreen(BuildContext context, int index) {
-    String route = '/home'; // ค่าเริ่มต้น
+    String route = '/member/home'; // ค่าเริ่มต้น
     switch (index) {
       case 0:
-        route = '/home';
+        route = '/member/home';
         break;
       case 1:
-        route = '/gallery';
+        route = '/member/gallery';
         break;
       case 2:
-        route = '/camera';
+        route = '/member/camera';
         break;
       case 3:
-        route = '/post';
+        route = '/member/post';
         break;
       case 4:
-        route = '/settings';
+        route = '/member/settings';
         break;
     }
 
