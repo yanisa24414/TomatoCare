@@ -2,13 +2,34 @@ import 'package:flutter/material.dart';
 
 class MemberNavigation extends StatelessWidget {
   final int selectedIndex;
-  final ValueChanged<int> onItemTapped;
 
-  const MemberNavigation({
-    super.key,
-    required this.selectedIndex,
-    required this.onItemTapped,
-  });
+  const MemberNavigation({super.key, required this.selectedIndex});
+
+  void _navigateToScreen(BuildContext context, int index) {
+    String route = '/home'; // ค่าเริ่มต้น
+    switch (index) {
+      case 0:
+        route = '/home';
+        break;
+      case 1:
+        route = '/gallery';
+        break;
+      case 2:
+        route = '/camera';
+        break;
+      case 3:
+        route = '/post';
+        break;
+      case 4:
+        route = '/settings';
+        break;
+    }
+
+    // เปลี่ยนหน้าเฉพาะเมื่อไม่ได้อยู่ในหน้านั้นอยู่แล้ว
+    if (ModalRoute.of(context)?.settings.name != route) {
+      Navigator.pushReplacementNamed(context, route);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,28 +59,14 @@ class MemberNavigation extends StatelessWidget {
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.white70,
           currentIndex: selectedIndex,
-          onTap: onItemTapped,
+          onTap: (index) => _navigateToScreen(context, index),
           items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.image), label: 'Gallery'),
+            BottomNavigationBarItem(icon: Icon(Icons.camera), label: 'Camera'),
+            BottomNavigationBarItem(icon: Icon(Icons.post_add), label: 'Post'),
             BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.image),
-              label: 'Gallery',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.camera),
-              label: 'Camera',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.post_add),
-              label: 'Post',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Setting',
-            ),
+                icon: Icon(Icons.settings), label: 'Setting'),
           ],
         ),
       ),
