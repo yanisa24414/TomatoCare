@@ -29,4 +29,6 @@ flutter:
 
   assets:
     - assets/logo.png
+    - assets/leaf1.jpg
+    - assets/leaf2.jpg
     
