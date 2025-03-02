@@ -12,7 +12,6 @@ import 'screens/member/camera_screen_member.dart';
 import 'screens/member/post_screen_member.dart';
 import 'screens/member/setting_screen_member.dart';
 import 'dart:developer';
-import 'package:myapp/screens/register_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
