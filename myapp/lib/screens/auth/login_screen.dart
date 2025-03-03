@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import '../register_screen.dart';
-import 'home_screen_guest.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myapp/services/auth_service.dart'; // ✅ Import AuthService
+import 'register_screen.dart';
+import '../guest/home_screen_guest.dart';
 import '../member/home_screen_member.dart';
+import '../auth/forgot_password.dart';
 
-class LoginScreenGuest extends StatelessWidget {
-  LoginScreenGuest({super.key});
+class LoginScreen extends StatelessWidget {
+  LoginScreen({super.key});
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -80,8 +83,7 @@ class LoginScreenGuest extends StatelessWidget {
                 const SizedBox(height: 40),
                 TextField(
                   controller: usernameController,
-                  style:
-                      TextStyle(color: Color(0xFF22512F)), // สีข้อความที่พิมพ์
+                  style: const TextStyle(color: Color(0xFF22512F)),
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: const Color(0xFFFFF2D8),
@@ -101,8 +103,7 @@ class LoginScreenGuest extends StatelessWidget {
                 TextField(
                   controller: passwordController,
                   obscureText: true,
-                  style:
-                      TextStyle(color: Color(0xFF22512F)), // สีข้อความที่พิมพ์
+                  style: const TextStyle(color: Color(0xFF22512F)),
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: const Color(0xFFFFF2D8),
@@ -132,7 +133,7 @@ class LoginScreenGuest extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         if (usernameController.text.isEmpty &&
                             passwordController.text.isEmpty) {
                           _showErrorDialog(context,
@@ -144,7 +145,9 @@ class LoginScreenGuest extends StatelessWidget {
                           _showErrorDialog(
                               context, "Please provide your password.");
                         } else {
-                          // เมื่อกรอกข้อมูลครบแล้ว นำไปยังหน้า HomeScreenMember
+                          // ✅ บันทึกว่าเป็น Member
+                          await AuthService.setMemberStatus(true);
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -183,7 +186,13 @@ class LoginScreenGuest extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ForgotPasswordScreen()),
+                    );
+                  },
                   child: const Text(
                     'Forgot your password?',
                     style: TextStyle(
@@ -203,7 +212,10 @@ class LoginScreenGuest extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
+                    // ✅ บันทึกว่าเป็น Guest
+                    await AuthService.setMemberStatus(false);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(

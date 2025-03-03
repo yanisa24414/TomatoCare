@@ -3,7 +3,8 @@
 
     <!-- เพิ่มสิทธิ์การใช้งานกล้อง -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature android:name="android.hardware.camera.any" android:required="true"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
 
     <application
         android:label="myapp"

@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:developer';
 
-class CameraScreenMember extends StatefulWidget {
-  const CameraScreenMember({super.key});
+class CameraScreen extends StatefulWidget {
+  final bool isMember; // ตรวจสอบว่าเป็นสมาชิกหรือไม่
+
+  const CameraScreen({super.key, required this.isMember});
 
   @override
-  State<CameraScreenMember> createState() => _CameraScreenMemberState();
+  State<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenMemberState extends State<CameraScreenMember> {
+class _CameraScreenState extends State<CameraScreen> {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
   bool _isCameraInitialized = false;
@@ -62,14 +64,18 @@ class _CameraScreenMemberState extends State<CameraScreenMember> {
                 : const Center(child: CircularProgressIndicator()),
           ),
 
-          // ✅ ปุ่มย้อนกลับ (กลับไปหน้า HomeScreenMember)
+          // ✅ ปุ่มย้อนกลับ (เช็ค isMember เพื่อกำหนดเส้นทาง)
           Positioned(
             top: 40,
             left: 16,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 32),
               onPressed: () {
-                Navigator.pushReplacementNamed(context, '/member/home');
+                if (widget.isMember) {
+                  Navigator.pushReplacementNamed(context, '/member/home');
+                } else {
+                  Navigator.pushReplacementNamed(context, '/guest/home');
+                }
               },
             ),
           ),

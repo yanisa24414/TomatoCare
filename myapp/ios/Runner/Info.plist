@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- ขอสิทธิ์เข้าถึงแกลอรี่และกล้อง -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>App ต้องการเข้าถึงแกลอรี่เพื่อเลือกรูปภาพ</string>
+	<key>NSCameraUsageDescription</key>
+	<string>App ต้องการเข้าถึงกล้องเพื่อถ่ายรูป</string>
+
 </dict>
 </plist>

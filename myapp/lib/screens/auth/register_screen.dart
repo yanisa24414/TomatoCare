@@ -102,10 +102,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: Color(0xFF22512F),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text(
           "Register",
           style: TextStyle(
@@ -114,6 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        leading: null, // ลบปุ่มลูกศรย้อนกลับออก
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -164,6 +161,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Center(
                         child: Text(
                           "Register",
+                          style: TextStyle(
+                            fontFamily: 'Questrial',
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20), // เพิ่มระยะห่าง
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacementNamed(
+                          context, '/login'); // เพิ่มปุ่มไปหน้า Login
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: const Color(0xFF22512F),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 6,
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Go to Login",
                           style: TextStyle(
                             fontFamily: 'Questrial',
                             color: Colors.white,
