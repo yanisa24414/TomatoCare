@@ -10,15 +10,20 @@ class HomeScreenMember extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6E3),
+
+      // ✅ ใช้ CustomAppBar (ฟอนต์ Questrial)
       appBar: const CustomAppBar(title: "TOMATO CARE"),
+
       body: Column(
         children: [
-          // ช่องค้นหา
+          // ✅ ช่องค้นหา
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: TextField(
               decoration: InputDecoration(
                 hintText: "Search...",
+                hintStyle:
+                    const TextStyle(fontFamily: 'Questrial'), // ✅ ใช้ Questrial
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 filled: true,
                 fillColor: Colors.white,
@@ -30,7 +35,7 @@ class HomeScreenMember extends StatelessWidget {
             ),
           ),
 
-          // รายการโพสต์ (สไลด์ได้)
+          // ✅ รายการโพสต์ (สไลด์ได้)
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(10.0),
@@ -61,6 +66,8 @@ class HomeScreenMember extends StatelessWidget {
           ),
         ],
       ),
+
+      // ✅ Bottom Navigation
       bottomNavigationBar: const MemberNavigation(selectedIndex: 0),
     );
   }

@@ -7,6 +7,8 @@ import 'screens/guest/setting_screen_guest.dart';
 import 'screens/member/home_screen_member.dart';
 import 'screens/member/setting_screen_member.dart';
 import 'screens/member/post_screen_member.dart';
+import 'screens/member/change_name.dart';
+import 'screens/member/history.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,7 +35,10 @@ class MyApp extends StatelessWidget {
                 builder: (context) => const HomeScreenGuest());
 
           case '/common/gallery':
-            final bool isMember = settings.arguments as bool? ?? false;
+            final args =
+                settings.arguments as Map<String, dynamic>?; // ✅ รองรับ Map
+            final bool isMember =
+                args?['isMember'] ?? false; // ✅ ดึงค่า isMember ออกมา
             return MaterialPageRoute(
               builder: (context) => GalleryScreen(isMember: isMember),
             );
@@ -47,7 +52,10 @@ class MyApp extends StatelessWidget {
                 builder: (context) => const HomeScreenMember());
 
           case '/common/camera':
-            final bool isMember = settings.arguments as bool? ?? false;
+            final args =
+                settings.arguments as Map<String, dynamic>?; // ✅ รองรับ Map
+            final bool isMember =
+                args?['isMember'] ?? false; // ✅ ดึงค่า isMember ออกมา
             return MaterialPageRoute(
               builder: (context) => CameraScreen(isMember: isMember),
             );
@@ -59,6 +67,14 @@ class MyApp extends StatelessWidget {
           case '/member/settings':
             return MaterialPageRoute(
                 builder: (context) => const SettingsScreenMember());
+
+          case '/member/change-name':
+            return MaterialPageRoute(
+                builder: (context) => const ChangeNameScreen());
+
+          case '/member/history':
+            return MaterialPageRoute(
+                builder: (context) => const HistoryScreen());
 
           default:
             return MaterialPageRoute(

@@ -15,6 +15,7 @@ class _CameraScreenState extends State<CameraScreen> {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
   bool _isCameraInitialized = false;
+  String? _errorMessage; // ✅ เพิ่มตัวแปรเก็บข้อความ error
 
   @override
   void initState() {
@@ -23,14 +24,25 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _initializeCamera() async {
-    _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      _controller = CameraController(_cameras![0], ResolutionPreset.high);
-      await _controller!.initialize();
+    try {
+      _cameras = await availableCameras();
+      if (_cameras != null && _cameras!.isNotEmpty) {
+        _controller = CameraController(_cameras![0], ResolutionPreset.high);
+        await _controller!.initialize();
 
-      log("Camera orientation: ${_cameras![0].sensorOrientation}");
+        log("📷 Camera initialized: ${_cameras![0].sensorOrientation}");
 
-      setState(() => _isCameraInitialized = true);
+        setState(() => _isCameraInitialized = true);
+      } else {
+        setState(() {
+          _errorMessage = "ไม่พบกล้องในอุปกรณ์";
+        });
+      }
+    } catch (e) {
+      log("❌ Camera error: $e");
+      setState(() {
+        _errorMessage = "เกิดข้อผิดพลาดในการเปิดกล้อง";
+      });
     }
   }
 
@@ -57,14 +69,22 @@ class _CameraScreenState extends State<CameraScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ✅ แสดงกล้องเต็มจอ
+          // ✅ แสดงกล้อง หรือ ข้อความ Error
           Positioned.fill(
-            child: _isCameraInitialized && _controller != null
-                ? CameraPreview(_controller!)
-                : const Center(child: CircularProgressIndicator()),
+            child: _errorMessage != null
+                ? Center(
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : _isCameraInitialized && _controller != null
+                    ? CameraPreview(_controller!)
+                    : const Center(child: CircularProgressIndicator()),
           ),
 
-          // ✅ ปุ่มย้อนกลับ (เช็ค isMember เพื่อกำหนดเส้นทาง)
+          // ✅ ปุ่มย้อนกลับ (ไปยัง Home ตามประเภทผู้ใช้)
           Positioned(
             top: 40,
             left: 16,
@@ -72,9 +92,11 @@ class _CameraScreenState extends State<CameraScreen> {
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 32),
               onPressed: () {
                 if (widget.isMember) {
-                  Navigator.pushReplacementNamed(context, '/member/home');
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/member/home', (route) => false);
                 } else {
-                  Navigator.pushReplacementNamed(context, '/guest/home');
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/guest/home', (route) => false);
                 }
               },
             ),

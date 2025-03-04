@@ -8,40 +8,45 @@ class SettingsScreenMember extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: "Settings"), // ✅ เพิ่ม AppBar
-      backgroundColor: const Color(0xFFFDF6E3), // สีพื้นหลังครีม
+      appBar: const CustomAppBar(title: "Settings"),
+      backgroundColor: const Color(0xFFFDF6E3),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // ปุ่ม Change Name Account
-            _buildButton(context, "Change Name Account", () {}),
+            // ✅ Change Name Account
+            _buildButton(context, "Change Name Account", () {
+              Navigator.pushNamed(context, '/member/change-name');
+            }),
 
             const SizedBox(height: 20),
-            // ปุ่ม History
-            _buildButton(context, "History", () {}),
+            // ✅ History
+            _buildButton(context, "History", () {
+              Navigator.pushNamed(context, '/member/history');
+            }),
 
             const SizedBox(height: 20),
-            // ปุ่ม Logout
-            _buildButton(context, "Logout", () {}),
+            // ✅ Logout
+            _buildButton(context, "Logout", () {
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/login', (route) => false);
+            }),
           ],
         ),
       ),
-      // ✅ เพิ่ม Bottom Navigation
       bottomNavigationBar: const MemberNavigation(selectedIndex: 4),
     );
   }
 
-  // ✅ ฟังก์ชันสร้างปุ่ม
   Widget _buildButton(
       BuildContext context, String text, VoidCallback onPressed) {
     return SizedBox(
-      width: 250, // กำหนดความกว้างให้เท่ากัน
+      width: 250,
       height: 50,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7D2424), // สีแดงเข้ม
+          backgroundColor: const Color(0xFF7D2424),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),

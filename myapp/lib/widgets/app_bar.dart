@@ -8,19 +8,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: const Color(0xFF7D2424),
+      backgroundColor: const Color(0xFF7D2424), // ✅ สีพื้นหลัง
       elevation: 0,
+      centerTitle: true,
+      automaticallyImplyLeading: false, // ✅ ปิดการแสดงปุ่มย้อนกลับ
       title: Text(
         title,
         style: const TextStyle(
-          color: Colors.white,
+          color: Colors.white, // ✅ สีตัวอักษร
           fontWeight: FontWeight.bold,
           fontSize: 22,
+          fontFamily: 'Questrial', // ✅ ใช้ฟอนต์ Questrial
         ),
       ),
-      centerTitle: true,
-
-      automaticallyImplyLeading: false, // ปิดการแสดงปุ่มย้อนกลับ
     );
   }
 

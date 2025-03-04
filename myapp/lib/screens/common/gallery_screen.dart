@@ -45,10 +45,12 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    // ✅ ตรวจสอบ arguments ก่อนใช้งาน
+    final args = ModalRoute.of(context)?.settings.arguments;
     final bool isMember =
-        args?['isMember'] ?? widget.isMember; // ✅ ดึงค่า isMember
+        (args is Map<String, dynamic> && args.containsKey('isMember'))
+            ? args['isMember']
+            : widget.isMember;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6E3),
