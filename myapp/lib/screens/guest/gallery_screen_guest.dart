@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../../navigation/guest_navigation.dart';
-import '../../navigation/member_navigation.dart';
+import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
+import '../../navigation/tab_navigation.dart';
 
-class GalleryScreen extends StatefulWidget {
-  final bool isMember;
-
-  const GalleryScreen({super.key, required this.isMember});
+class GalleryScreenGuest extends StatefulWidget {
+  const GalleryScreenGuest({super.key});
 
   @override
-  State<GalleryScreen> createState() => _GalleryScreenState();
+  State<GalleryScreenGuest> createState() => _GalleryScreenGuestState();
 }
 
-class _GalleryScreenState extends State<GalleryScreen> {
-  File? _selectedImage; // เก็บรูปที่เลือก
+class _GalleryScreenGuestState extends State<GalleryScreenGuest> {
+  File? _selectedImage;
 
-  // ฟังก์ชันเปิดแกลอรี่ให้เลือกภาพ
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -27,15 +24,14 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _selectedImage = File(pickedFile.path);
       });
 
-      // จำลองการวิเคราะห์โรคและไปหน้าแสดงผลลัพธ์
       Future.delayed(const Duration(seconds: 2), () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => AnalysisResultScreen(
               imagePath: pickedFile.path,
-              diseaseName: "Leaf Spot Disease", // จำลองผลลัพธ์
-              confidence: 92.5, // จำลองค่าความมั่นใจ
+              diseaseName: "Leaf Spot Disease",
+              confidence: 92.5,
             ),
           ),
         );
@@ -45,14 +41,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ ตรวจสอบ arguments ก่อนใช้งาน
-    final args = ModalRoute.of(context)?.settings.arguments;
-    final bool isMember =
-        (args is Map<String, dynamic> && args.containsKey('isMember'))
-            ? args['isMember']
-            : widget.isMember;
-
     return Scaffold(
+      appBar: const CustomAppBar(title: "Gallery"),
       backgroundColor: const Color(0xFFFDF6E3),
       body: Center(
         child: Column(
@@ -71,14 +61,26 @@ class _GalleryScreenState extends State<GalleryScreen> {
               onPressed: _pickImage,
               icon: const Icon(Icons.photo_library),
               label: const Text("เลือกภาพจากแกลอรี่"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7D2424),
+              ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: isMember
-          ? const MemberNavigation(selectedIndex: 1)
-          : const GuestNavigation(
-              selectedIndex: 1), // ✅ แสดง Navigation ตามค่า isMember
+      bottomNavigationBar: TabNavigation(
+        isMember: false,
+        selectedIndex: 1,
+        onTabPress: (index) => Navigator.pushReplacementNamed(
+          context,
+          [
+            '/guest/home',
+            '/guest/gallery',
+            '/guest/camera',
+            '/guest/settings'
+          ][index],
+        ),
+      ),
     );
   }
 }

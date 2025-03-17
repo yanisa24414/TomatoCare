@@ -62,7 +62,6 @@ class ForgotPasswordScreen extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                // TODO: Implement password reset logic
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Password reset link sent!'),

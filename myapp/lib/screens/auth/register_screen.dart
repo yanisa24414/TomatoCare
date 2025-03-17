@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/db.dart'; // Ensure the path is correct
+import 'package:myapp/db.dart';
+import 'package:myapp/screens/auth/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
@@ -42,6 +43,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _register() {
+    if (!mounted) return;
+
     final email = emailController.text.trim();
     final username = usernameController.text.trim();
     final password = passwordController.text;
@@ -77,6 +80,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       _dbHelper?.registerUser(
           email: email, username: username, password: password);
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("Registration successful!",
               style: TextStyle(fontFamily: 'Questrial'))));
@@ -88,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       _dbHelper?.queryUsers();
     } catch (e) {
-      print("Error during registration: $e");
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("Registration failed: $e",
               style: TextStyle(fontFamily: 'Questrial'))));
@@ -97,118 +102,134 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = keyboardHeight > 0;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF6E3), // พื้นหลังสีเดียว
-      appBar: AppBar(
-        backgroundColor: Color(0xFF22512F),
-        elevation: 0,
-        title: Text(
-          "Register",
-          style: TextStyle(
-              fontFamily: 'Questrial',
-              color: Colors.white,
-              fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        leading: null, // ลบปุ่มลูกศรย้อนกลับออก
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // ทำให้ Column ไม่ยืดเต็มหน้าจอ
-          crossAxisAlignment: CrossAxisAlignment.start, // จัดชิดซ้าย
+      resizeToAvoidBottomInset: false, // ป้องกันการ resize อัตโนมัติ
+      body: GestureDetector(
+        onTap: () =>
+            FocusScope.of(context).unfocus(), // ปิดแป้นพิมพ์เมื่อแตะพื้นที่ว่าง
+        child: Stack(
           children: [
-            Align(
-              alignment: Alignment.topCenter, // จัดให้อยู่ด้านบนตรงกลาง
-              child: Column(
-                children: [
-                  _buildTextField(
-                      emailController, "Enter your email", Icons.email),
-                  _buildTextField(
-                      usernameController, "Choose a username", Icons.person),
-                  _buildTextField(
-                      passwordController, "Enter your password", Icons.lock,
-                      obscureText: !_isPasswordVisible, toggleObscureText: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  }),
-                  _buildTextField(confirmPasswordController,
-                      "Confirm your password", Icons.lock,
-                      obscureText: !_isConfirmPasswordVisible,
-                      toggleObscureText: () {
-                    setState(() {
-                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                    });
-                  }),
-                  const SizedBox(height: 20), // เพิ่มระยะห่าง
-                  GestureDetector(
-                    onTap: _register,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: const Color(0xFF7D2424),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 6,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          "Register",
-                          style: TextStyle(
-                            fontFamily: 'Questrial',
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+            // Top Section with Image
+            Container(
+              height: height * 0.4,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/start.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+
+            // Bottom Section with Form
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              margin: EdgeInsets.only(
+                top: isKeyboardVisible
+                    ? height * 0.15 // ขยับขึ้นเมื่อแป้นพิมพ์แสดง
+                    : height * 0.35, // ตำแหน่งปกติ
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(20, 20, 20, keyboardHeight + 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Create New Account',
+                      style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7D2424),
+                        fontFamily: 'Questrial',
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20), // เพิ่มระยะห่าง
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacementNamed(
-                          context, '/login'); // เพิ่มปุ่มไปหน้า Login
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: const Color(0xFF22512F),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 6,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
+                    const SizedBox(height: 30),
+                    _buildTextField(
+                        emailController, "Enter your email", Icons.email),
+                    _buildTextField(
+                        usernameController, "Choose a username", Icons.person),
+                    _buildTextField(
+                        passwordController, "Enter your password", Icons.lock,
+                        obscureText: !_isPasswordVisible,
+                        toggleObscureText: () {
+                      setState(() => _isPasswordVisible = !_isPasswordVisible);
+                    }),
+                    _buildTextField(confirmPasswordController,
+                        "Confirm your password", Icons.lock,
+                        obscureText: !_isConfirmPasswordVisible,
+                        toggleObscureText: () {
+                      setState(() => _isConfirmPasswordVisible =
+                          !_isConfirmPasswordVisible);
+                    }),
+                    const SizedBox(height: 20),
+                    _buildButton(
+                        "Register", const Color(0xFF7D2424), _register),
+                    const SizedBox(height: 15),
+                    // Replace button with text
+                    Center(
+                      child: GestureDetector(
+                        onTap: () => Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const LoginScreen()),
+                        ),
                         child: Text(
                           "Go to Login",
                           style: TextStyle(
                             fontFamily: 'Questrial',
-                            color: Colors.white,
+                            color: const Color(0xFF22512F),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 50), // เว้นที่ว่างด้านล่าง
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton(String text, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          color: color,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: const Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontFamily: 'Questrial',
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

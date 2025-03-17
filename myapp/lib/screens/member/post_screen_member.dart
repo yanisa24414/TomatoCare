@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../navigation/member_navigation.dart';
-import '../../../widgets/app_bar.dart'; // ✅ Import CustomAppBar
+import '../../navigation/tab_navigation.dart';
+import '../../widgets/app_bar.dart';
 
 class PostScreenMember extends StatelessWidget {
   const PostScreenMember({super.key});
@@ -8,14 +8,25 @@ class PostScreenMember extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: "Post Page"), // ✅ เพิ่ม AppBar
+      appBar: const CustomAppBar(title: "Create Post"),
       backgroundColor: const Color(0xFFFDF6E3),
       body: const Center(
-        child: Text('Post page', style: TextStyle(fontSize: 24)),
+        child: Text('Post Screen Content'),
       ),
-      bottomNavigationBar: const MemberNavigation(
-          selectedIndex:
-              3), // ✅ ตั้งค่า selectedIndex เป็น 3 เพราะเป็นหน้าของโพสต์
+      bottomNavigationBar: TabNavigation(
+        isMember: true,
+        selectedIndex: 3,
+        onTabPress: (index) => Navigator.pushReplacementNamed(
+          context,
+          [
+            '/member/home',
+            '/member/gallery',
+            '/member/camera',
+            '/member/post',
+            '/member/settings'
+          ][index],
+        ),
+      ),
     );
   }
 }

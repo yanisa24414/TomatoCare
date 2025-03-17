@@ -1,234 +1,216 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/services/auth_service.dart';
+import 'package:myapp/screens/auth/register_screen.dart';
+import 'package:myapp/screens/auth/forgot_password.dart'; // Add this import
 
-import 'package:myapp/services/auth_service.dart'; // ✅ Import AuthService
-import 'register_screen.dart';
-import '../guest/home_screen_guest.dart';
-import '../member/home_screen_member.dart';
-import '../auth/forgot_password.dart';
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
-  void _showErrorDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Container(
-            width: 100,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFFFFF2D8),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'Questrial',
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF882424),
-                    foregroundColor: const Color(0xFFFFF2D8),
-                  ),
-                  child: const Text(
-                    "OK",
-                    style: TextStyle(
-                      fontFamily: 'Questrial',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _handleGuestLogin(BuildContext context) async {
+    if (!mounted) return;
+    await AuthService.setMemberStatus(false);
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/guest/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF22512F),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+            45, 125, 45, 20), // Changed from symmetric to fromLTRB
+        child: Column(
+          children: [
+            SizedBox(
+              width: 400, // Reduced from 500
+              height: 250, // Reduced from 300
+              child: Image.asset(
+                'assets/logo3.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+            SizedBox(height: 40), // Increased from original spacing
+            _buildTextField(
+              controller: usernameController,
+              hint: 'Enter your Email',
+              keyboardType: TextInputType.emailAddress,
+            ),
+            SizedBox(height: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Image.asset(
-                  'assets/logo.png',
-                  width: 300,
-                ),
-                const SizedBox(height: 40),
-                TextField(
-                  controller: usernameController,
-                  style: const TextStyle(color: Color(0xFF22512F)),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFFFF2D8),
-                    hintText: 'Username or Email',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'Questrial',
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(136, 38, 87, 52),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  style: const TextStyle(color: Color(0xFF22512F)),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFFFF2D8),
-                    hintText: 'Password',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'Questrial',
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(136, 38, 87, 52),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Stack(
+                  alignment: Alignment.centerRight,
                   children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFF2D8),
-                        foregroundColor: const Color(0xFF22512F),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 25, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () async {
-                        if (usernameController.text.isEmpty &&
-                            passwordController.text.isEmpty) {
-                          _showErrorDialog(context,
-                              "Please provide both username and password.");
-                        } else if (usernameController.text.isEmpty) {
-                          _showErrorDialog(
-                              context, "Please provide your username.");
-                        } else if (passwordController.text.isEmpty) {
-                          _showErrorDialog(
-                              context, "Please provide your password.");
-                        } else {
-                          // ✅ บันทึกว่าเป็น Member
-                          await AuthService.setMemberStatus(true);
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const HomeScreenMember()),
-                          );
-                        }
-                      },
-                      child: const Text('Sign In',
-                          style: TextStyle(
-                              fontFamily: 'Questrial',
-                              fontWeight: FontWeight.bold)),
+                    _buildTextField(
+                      controller: passwordController,
+                      hint: 'Enter your Password',
+                      isPassword: true,
+                      isPasswordVisible: _isPasswordVisible,
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFF2D8),
-                        foregroundColor: const Color(0xFF22512F),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 25, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    Positioned(
+                      right: 12,
+                      child: IconButton(
+                        icon: Icon(
+                          _isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Color(0xFF22512F),
                         ),
+                        onPressed: () => setState(
+                            () => _isPasswordVisible = !_isPasswordVisible),
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => RegisterScreen()),
-                        );
-                      },
-                      child: const Text('Register',
-                          style: TextStyle(
-                              fontFamily: 'Questrial',
-                              fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ForgotPasswordScreen()),
+                        builder: (context) => ForgotPasswordScreen(),
+                      ),
                     );
                   },
-                  child: const Text(
-                    'Forgot your password?',
+                  child: Text(
+                    'Forgot password?',
                     style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontFamily: 'Questrial'),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFF2D8),
-                    foregroundColor: const Color(0xFF22512F),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 50, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      color: Color(0xFF22512F),
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
-                  onPressed: () async {
-                    // ✅ บันทึกว่าเป็น Guest
-                    await AuthService.setMemberStatus(false);
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => HomeScreenGuest()),
-                    );
-                  },
-                  child: const Text('Guest',
-                      style: TextStyle(
-                          fontFamily: 'Questrial',
-                          fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
+            SizedBox(height: 20),
+            _buildButton(
+              text: 'Sign In',
+              color: Color(0xFF22512F),
+              onPressed: () {
+                final username = usernameController.text.trim();
+                final password = passwordController.text;
+
+                if (username.isEmpty || password.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Please enter both email and password'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                // Proceed with sign in
+                AuthService.setMemberStatus(true);
+                Navigator.pushReplacementNamed(context, '/member/home');
+              },
+            ),
+            SizedBox(height: 15),
+            _buildButton(
+              text: 'Continue as Guest',
+              color: Color(0xFF7D2424),
+              onPressed: () => _handleGuestLogin(context),
+            ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Don't have an account? ",
+                  style: TextStyle(
+                    color: Color(0xFF22512F),
+                    fontSize: 14,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterScreen(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Sign Up',
+                    style: TextStyle(
+                      color: Color(0xFF7D2424),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    bool isPassword = false,
+    bool isPasswordVisible = false,
+    TextInputType? keyboardType,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword && !isPasswordVisible,
+        keyboardType: keyboardType,
+        style: TextStyle(color: Color(0xFF22512F)),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey),
+          filled: true,
+          fillColor: Color(0xFFE8E8E8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton({
+    required String text,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.75,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: EdgeInsets.symmetric(vertical: 15),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
