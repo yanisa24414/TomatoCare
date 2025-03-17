@@ -6,7 +6,7 @@ class GuestNavigation extends StatelessWidget {
   const GuestNavigation({super.key, required this.selectedIndex});
 
   void _navigateToScreen(BuildContext context, int index) {
-    String route = '/guest/home'; // ค่าเริ่มต้น
+    String route = '/guest/home';
     switch (index) {
       case 0:
         route = '/guest/home';
