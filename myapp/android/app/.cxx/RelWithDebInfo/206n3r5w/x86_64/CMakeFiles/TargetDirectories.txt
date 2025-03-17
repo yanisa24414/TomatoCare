@@ -1,0 +1,2 @@
+C:/Users/Fangy/TomatoCare/TomatoCare/myapp/android/app/.cxx/RelWithDebInfo/206n3r5w/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Fangy/TomatoCare/TomatoCare/myapp/android/app/.cxx/RelWithDebInfo/206n3r5w/x86_64/CMakeFiles/rebuild_cache.dir
