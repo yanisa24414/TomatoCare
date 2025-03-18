@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../navigation/tab_navigation.dart';
 import '../../../widgets/app_bar.dart'; // ✅ Import CustomAppBar
 import 'package:myapp/widgets/post_card.dart';
 
@@ -65,20 +64,6 @@ class HomeScreenMember extends StatelessWidget {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: TabNavigation(
-        isMember: true,
-        selectedIndex: 0,
-        onTabPress: (index) => Navigator.pushReplacementNamed(
-          context,
-          [
-            '/member/home',
-            '/member/gallery',
-            '/member/camera',
-            '/member/post',
-            '/member/settings'
-          ][index],
-        ),
       ),
     );
   }

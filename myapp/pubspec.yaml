@@ -36,7 +36,6 @@ flutter:
       fonts:
         - asset: assets/Questrial-Regular.ttf
 
-
   assets:
     - assets/logo.png
     - assets/leaf1.jpg

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-
-import '../../../widgets/app_bar.dart'; // ✅ Import CustomAppBar
+import '../../../widgets/app_bar.dart';
 import 'package:myapp/widgets/post_card.dart';
-import 'package:myapp/navigation/tab_navigation.dart';
 
 class HomeScreenGuest extends StatelessWidget {
   const HomeScreenGuest({super.key});
@@ -61,19 +59,6 @@ class HomeScreenGuest extends StatelessWidget {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: TabNavigation(
-        isMember: false,
-        selectedIndex: 0,
-        onTabPress: (index) => Navigator.pushReplacementNamed(
-          context,
-          [
-            '/guest/home',
-            '/guest/gallery',
-            '/guest/camera',
-            '/guest/settings'
-          ][index],
-        ),
       ),
     );
   }

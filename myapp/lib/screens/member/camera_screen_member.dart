@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import '../../widgets/app_bar.dart';
-import '../../navigation/tab_navigation.dart';
+
 import '../common/analysis_result_screen.dart';
 
 class CameraScreenMember extends StatefulWidget {
@@ -79,25 +79,11 @@ class _CameraScreenMemberState extends State<CameraScreenMember> {
             padding: const EdgeInsets.all(20),
             child: FloatingActionButton(
               onPressed: _takePicture,
-              backgroundColor: const Color(0xFF22512F),
+              backgroundColor: const Color(0xFF7D2424),
               child: const Icon(Icons.camera_alt), // Moved child to end
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: TabNavigation(
-        isMember: true,
-        selectedIndex: 2,
-        onTabPress: (index) => Navigator.pushReplacementNamed(
-          context,
-          [
-            '/member/home',
-            '/member/gallery',
-            '/member/camera',
-            '/member/post',
-            '/member/settings'
-          ][index],
-        ),
       ),
     );
   }

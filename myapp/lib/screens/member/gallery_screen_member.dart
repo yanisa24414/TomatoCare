@@ -3,7 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
-import '../../navigation/tab_navigation.dart';
 
 class GalleryScreenMember extends StatefulWidget {
   const GalleryScreenMember({super.key});
@@ -67,20 +66,6 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
               ),
             ),
           ],
-        ),
-      ),
-      bottomNavigationBar: TabNavigation(
-        isMember: true,
-        selectedIndex: 1,
-        onTabPress: (index) => Navigator.pushReplacementNamed(
-          context,
-          [
-            '/member/home',
-            '/member/gallery',
-            '/member/camera',
-            '/member/post',
-            '/member/settings'
-          ][index],
         ),
       ),
     );

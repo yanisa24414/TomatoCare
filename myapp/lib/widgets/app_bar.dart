@@ -17,7 +17,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: const TextStyle(
           color: Colors.white, // ✅ สีตัวอักษร
           fontWeight: FontWeight.bold,
-          fontSize: 22,
+          fontSize: 18,
           fontFamily: 'Questrial', // ✅ ใช้ฟอนต์ Questrial
         ),
       ),

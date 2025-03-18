@@ -16,20 +16,15 @@ class TabNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       currentIndex: selectedIndex,
-      onTap: (index) {
-        if (index == selectedIndex) return;
-
-        // แทนการใช้ pushReplacementNamed ด้วย pushNamed เพื่อรักษา state ของ tab
-        Navigator.pushNamed(
-          context,
-          _getRoute(index),
-          arguments: index == 1 || index == 2 ? {'isMember': isMember} : null,
-        );
-      },
+      onTap: onTabPress,
       type: BottomNavigationBarType.fixed,
       backgroundColor: const Color(0xFFFDF6E3),
       selectedItemColor:
-          isMember ? const Color(0xFF22512F) : const Color(0xFF7D2424),
+          isMember ? const Color(0xFF7D2424) : const Color(0xFF7D2424),
+      selectedLabelStyle:
+          const TextStyle(fontFamily: 'Questrial'), // เพิ่ม font
+      unselectedLabelStyle:
+          const TextStyle(fontFamily: 'Questrial'), // เพิ่ม font
       items: isMember
           ? const [
               BottomNavigationBarItem(
@@ -72,37 +67,5 @@ class TabNavigation extends StatelessWidget {
               ),
             ],
     );
-  }
-
-  String _getRoute(int index) {
-    if (isMember) {
-      switch (index) {
-        case 0:
-          return '/member/home';
-        case 1:
-          return '/member/gallery'; // แก้จาก '/common/gallery'
-        case 2:
-          return '/member/camera'; // แก้จาก '/common/camera'
-        case 3:
-          return '/member/post';
-        case 4:
-          return '/member/settings';
-        default:
-          return '/member/home';
-      }
-    } else {
-      switch (index) {
-        case 0:
-          return '/guest/home';
-        case 1:
-          return '/guest/gallery';
-        case 2:
-          return '/guest/camera';
-        case 3:
-          return '/guest/settings';
-        default:
-          return '/guest/home';
-      }
-    }
   }
 }

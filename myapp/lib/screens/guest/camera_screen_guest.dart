@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import '../../widgets/app_bar.dart';
-import '../../navigation/tab_navigation.dart';
 import '../common/analysis_result_screen.dart';
 
 class CameraScreenGuest extends StatefulWidget {
@@ -84,19 +83,6 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: TabNavigation(
-        isMember: false,
-        selectedIndex: 2,
-        onTabPress: (index) => Navigator.pushReplacementNamed(
-          context,
-          [
-            '/guest/home',
-            '/guest/gallery',
-            '/guest/camera',
-            '/guest/settings'
-          ][index],
-        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../navigation/tab_navigation.dart';
 import '../../widgets/app_bar.dart';
+import '../auth/login_screen.dart';
 
 class SettingsScreenGuest extends StatelessWidget {
   const SettingsScreenGuest({super.key});
@@ -10,41 +10,43 @@ class SettingsScreenGuest extends StatelessWidget {
     return Scaffold(
       appBar: const CustomAppBar(title: "Settings"),
       backgroundColor: const Color(0xFFFDF6E3),
-      body: ListView(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.person_add),
-            title: const Text('Sign in'),
-            onTap: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-          ),
-          const ListTile(
-            leading: Icon(Icons.info),
-            title: Text('About'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.help),
-            title: Text('Help'),
-          ),
-        ],
-      ),
-      bottomNavigationBar: TabNavigation(
-        isMember: false,
-        selectedIndex: 3,
-        onTabPress: (index) {
-          final routes = [
-            '/guest/home',
-            '/common/gallery',
-            '/common/camera',
-            '/guest/settings'
-          ];
-          Navigator.pushReplacementNamed(
-            context,
-            routes[index],
-            arguments: index == 1 || index == 2 ? {'isMember': false} : null,
-          );
-        },
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Spacer(),
+            // Sign In Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7D2424),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LoginScreen()),
+                  );
+                },
+                child: const Text(
+                  'Sign In',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Questrial', // เปลี่ยนเป็น Questrial
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }

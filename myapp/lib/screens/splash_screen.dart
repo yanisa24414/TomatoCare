@@ -74,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    fontFamily: 'Questrial',
+                    fontFamily: 'Questrial', // เปลี่ยนเป็น Questrial
                   ),
                 ),
                 const SizedBox(height: 400),
@@ -85,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen>
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontFamily: 'Questrial',
+                      fontFamily: 'Questrial', // เปลี่ยนเป็น Questrial
                     ),
                   ),
                 ),

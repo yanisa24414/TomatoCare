@@ -18,7 +18,7 @@ class AnalysisResultScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6E3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF22512F),
+        backgroundColor: const Color(0xFF7D2424),
         title: const Text(
           "Analysis Result",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
