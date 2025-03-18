@@ -19,23 +19,24 @@ class _GalleryScreenGuestState extends State<GalleryScreenGuest> {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
+    if (pickedFile != null && mounted) {
       setState(() {
         _selectedImage = File(pickedFile.path);
       });
 
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnalysisResultScreen(
-              imagePath: pickedFile.path,
-              diseaseName: "Leaf Spot Disease",
-              confidence: 92.5,
-            ),
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AnalysisResultScreen(
+            imagePath: pickedFile.path,
+            diseaseName: "Leaf Spot Disease",
+            confidence: 92.5,
           ),
-        );
-      });
+        ),
+      );
     }
   }
 

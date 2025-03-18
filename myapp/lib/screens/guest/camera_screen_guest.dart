@@ -35,19 +35,19 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
       final image = await controller!.takePicture();
       if (!mounted) return;
 
-      // นำภาพไปวิเคราะห์
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnalysisResultScreen(
-              imagePath: image.path,
-              diseaseName: "Leaf Spot Disease",
-              confidence: 92.5,
-            ),
+      await Future.delayed(const Duration(seconds: 2)); // Use await
+      if (!mounted) return; // Add mounted check after delay
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AnalysisResultScreen(
+            imagePath: image.path,
+            diseaseName: "Leaf Spot Disease",
+            confidence: 92.5,
           ),
-        );
-      });
+        ),
+      );
     } catch (e) {
       // Handle error
     }
@@ -78,9 +78,9 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
           Container(
             padding: const EdgeInsets.all(20),
             child: FloatingActionButton(
-              backgroundColor: const Color(0xFF7D2424),
-              child: const Icon(Icons.camera_alt),
               onPressed: _takePicture,
+              backgroundColor: const Color(0xFF7D2424),
+              child: const Icon(Icons.camera_alt), // Moved child to end
             ),
           ),
         ],

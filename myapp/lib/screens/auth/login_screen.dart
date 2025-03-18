@@ -11,15 +11,52 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
-  Future<void> _handleGuestLogin(BuildContext context) async {
-    if (!mounted) return;
+  Future<void> _handleGuestLogin() async {
     await AuthService.setMemberStatus(false);
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/guest/home');
+  }
+
+  Future<void> _handleSubmit() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        // จำลองการรอ API
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+
+        // ตรวจสอบ email/password (จำลอง)
+        if (_emailController.text == 'test@test.com' &&
+            _passwordController.text == 'password') {
+          Navigator.pushReplacementNamed(context, '/member/home');
+        } else {
+          _showErrorDialog('Invalid email or password');
+        }
+      } catch (e) {
+        if (!mounted) return;
+        _showErrorDialog('An error occurred: $e');
+      }
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -41,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             SizedBox(height: 40), // Increased from original spacing
             _buildTextField(
-              controller: usernameController,
+              controller: _emailController,
               hint: 'Enter your Email',
               keyboardType: TextInputType.emailAddress,
             ),
@@ -53,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   children: [
                     _buildTextField(
-                      controller: passwordController,
+                      controller: _passwordController,
                       hint: 'Enter your Password',
                       isPassword: true,
                       isPasswordVisible: _isPasswordVisible,
@@ -96,31 +133,14 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(height: 20),
             _buildButton(
               text: 'Sign In',
-              color: Color(0xFF22512F),
-              onPressed: () {
-                final username = usernameController.text.trim();
-                final password = passwordController.text;
-
-                if (username.isEmpty || password.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Please enter both email and password'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                // Proceed with sign in
-                AuthService.setMemberStatus(true);
-                Navigator.pushReplacementNamed(context, '/member/home');
-              },
+              color: const Color(0xFF22512F),
+              onPressed: _handleSubmit, // Remove context parameter
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             _buildButton(
               text: 'Continue as Guest',
-              color: Color(0xFF7D2424),
-              onPressed: () => _handleGuestLogin(context),
+              color: const Color(0xFF7D2424),
+              onPressed: _handleGuestLogin, // Remove context parameter
             ),
             SizedBox(height: 20),
             Row(
