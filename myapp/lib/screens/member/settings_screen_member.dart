@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_bar.dart';
 import '../auth/login_screen.dart';
+import '../../utils/file_utils.dart';
+import '../common/database_viewer_screen.dart'; // Add this import
 
-class SettingsScreenMember extends StatelessWidget {
+class SettingsScreenMember extends StatefulWidget {
   const SettingsScreenMember({super.key});
 
+  @override
+  State<SettingsScreenMember> createState() => _SettingsScreenMemberState();
+}
+
+class _SettingsScreenMemberState extends State<SettingsScreenMember> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,6 +87,24 @@ class SettingsScreenMember extends StatelessWidget {
                                   'Questrial')), // เปลี่ยนเป็น Questrial
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {},
+                    ),
+                    // เพิ่ม ListTile สำหรับ Export Database
+                    ListTile(
+                      leading:
+                          const Icon(Icons.storage, color: Color(0xFF22512F)),
+                      title: const Text('Export Database',
+                          style: TextStyle(fontFamily: 'Questrial')),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () async {
+                        await FileUtils.copyDatabaseToAccessibleLocation();
+                        if (!mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const DatabaseViewerScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

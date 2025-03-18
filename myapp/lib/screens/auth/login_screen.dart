@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/screens/auth/register_screen.dart';
 import 'package:myapp/screens/auth/forgot_password.dart'; // Add this import
+import 'package:myapp/services/database_helper.dart'; // เพิ่ม import นี้
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,22 +26,63 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final email = _emailController.text;
+        final email = _emailController.text.trim();
         final password = _passwordController.text;
 
-        await Future.delayed(const Duration(seconds: 2));
-        if (!mounted) return; // ตรวจสอบว่า widget ยังอยู่หรือไม่
+        // เพิ่ม debug logs
+        print('Login attempt with:');
+        print('Email: $email');
+        print('Password: $password');
 
-        if (email.isNotEmpty && password.isNotEmpty) {
+        // ดูข้อมูลในฐานข้อมูลทั้งหมด
+        await DatabaseHelper.instance.debugPrintUsers();
+
+        final success = await AuthService.login(email, password);
+
+        if (!mounted) return;
+
+        if (success) {
           await AuthService.setMemberStatus(true);
-          if (!mounted) return; // ตรวจสอบอีกครั้งหลัง async operation
+          if (!mounted) return;
+
+          // แสดง loading
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) =>
+                const Center(child: CircularProgressIndicator()),
+          );
+
+          // รอสักครู่
+          await Future.delayed(const Duration(seconds: 1));
+
+          if (!mounted) return;
+          Navigator.pop(context); // ปิด loading
+
           Navigator.pushReplacementNamed(context, '/member');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Welcome back!'),
+              backgroundColor: Color(0xFF22512F),
+            ),
+          );
         } else {
-          _showErrorDialog('Please fill in all fields');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid email or password'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } catch (e) {
+        print('Login error: $e'); // เพิ่ม debug log
         if (!mounted) return;
-        _showErrorDialog('An error occurred: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }

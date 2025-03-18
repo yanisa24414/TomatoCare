@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/db.dart';
+import 'package:myapp/services/database_helper.dart'; // เปลี่ยนจาก db.dart
 import 'package:myapp/screens/auth/login_screen.dart';
+import 'package:myapp/services/auth_service.dart'; // เพิ่ม import auth_service
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -28,7 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _initDatabase() async {
-    _dbHelper = await DatabaseHelper.createInstance();
+    _dbHelper = DatabaseHelper.instance; // แก้ไขการเรียกใช้
     setState(() {});
   }
 
@@ -38,11 +39,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     usernameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
-    _dbHelper?.close();
     super.dispose();
   }
 
-  void _register() {
+  void _register() async {
     if (!mounted) return;
 
     final email = emailController.text.trim();
@@ -50,53 +50,108 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final password = passwordController.text;
     final confirmPassword = confirmPasswordController.text;
 
-    // ตรวจสอบอีเมลว่าต้องมี @ และรูปแบบถูกต้อง
+    // ตรวจสอบอีเมล
     final emailRegex =
         RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     if (!emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Invalid email format.",
-              style: TextStyle(fontFamily: 'Questrial'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Invalid email format.")),
+      );
       return;
     }
 
-    // ตรวจสอบรหัสผ่านต้องมี 5 ตัวขึ้นไปและมีทั้งตัวอักษรและตัวเลข
-    final passwordRegex = RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,}$');
-    if (!passwordRegex.hasMatch(password)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              "Password must be at least 5 characters long and include letters and numbers.",
-              style: TextStyle(fontFamily: 'Questrial'))));
+    // ตรวจสอบรหัสผ่าน
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Password must be at least 6 characters long")),
+      );
       return;
     }
 
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text("Password must contain at least one uppercase letter")),
+      );
+      return;
+    }
+
+    if (!password.contains(RegExp(r'[a-z]'))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text("Password must contain at least one lowercase letter")),
+      );
+      return;
+    }
+
+    if (!password.contains(RegExp(r'[0-9]'))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Password must contain at least one number")),
+      );
+      return;
+    }
+
+    // ตรวจสอบรหัสผ่านตรงกัน
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Passwords do not match.",
-              style: TextStyle(fontFamily: 'Questrial'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
+      );
       return;
     }
 
+    // ถ้าผ่านการตรวจสอบทั้งหมด ดำเนินการลงทะเบียน
     try {
-      _dbHelper?.registerUser(
-          email: email, username: username, password: password);
+      // เรียกใช้ register จาก AuthService แทน
+      final success = await AuthService.register(
+        email,
+        password,
+        username,
+      );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Registration successful!",
-              style: TextStyle(fontFamily: 'Questrial'))));
 
-      emailController.clear();
-      usernameController.clear();
-      passwordController.clear();
-      confirmPasswordController.clear();
+      if (success) {
+        // แสดง SnackBar แจ้งสำเร็จ
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Registration successful!",
+                style: TextStyle(fontFamily: 'Questrial')),
+            backgroundColor: Color(0xFF22512F),
+          ),
+        );
 
-      _dbHelper?.queryUsers();
+        // Debug log
+        print('Debug - New user registered:');
+        print('Email: $email');
+        print('Username: $username');
+
+        // ตรวจสอบข้อมูลในฐานข้อมูล
+        await DatabaseHelper.instance.debugPrintUsers();
+
+        // รอ 2 วินาทีแล้วนำทางไปหน้า login
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      } else {
+        throw Exception('Registration failed');
+      }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text("Registration failed: $e",
-              style: TextStyle(fontFamily: 'Questrial'))));
+              style: const TextStyle(fontFamily: 'Questrial')),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

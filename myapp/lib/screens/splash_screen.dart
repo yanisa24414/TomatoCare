@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen>
         Tween<double>(begin: 1.0, end: 0.0).animate(_animationController);
 
     // Auto navigate after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,

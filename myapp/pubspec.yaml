@@ -14,7 +14,7 @@ dependencies:
   shared_preferences: ^2.2.2
   camera: ^0.11.1
   permission_handler: ^11.0.1
-  path_provider: ^2.1.2  # ใช้จัดการ path ไฟล์ฐานข้อมูล
+  path_provider: ^2.1.2  
   flutter_lints: ^5.0.0
   sqflite: ^2.0.0+4
   sqflite_common_ffi: ^2.0.0+4
