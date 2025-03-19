@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:myapp/services/database_helper.dart';
-import 'package:myapp/screens/auth/login_screen.dart';
-import 'package:myapp/services/auth_service.dart';
+import '../../db.dart'; // แก้ import path
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -99,41 +98,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // ถ้าผ่านการตรวจสอบทั้งหมด ดำเนินการลงทะเบียน
     try {
-      // เรียกใช้ register จาก AuthService แทน
-      final success = await AuthService.register(
-        email,
-        password,
-        username,
+      // เปลี่ยนจาก AuthService เป็น DatabaseHelper
+      await DatabaseHelper.instance.registerUser(
+        email: email,
+        username: username,
+        password: password,
       );
 
       if (!mounted) return;
 
-      if (success) {
-        // แสดง SnackBar แจ้งสำเร็จ
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Registration successful!",
-                style: TextStyle(fontFamily: 'Questrial')),
-            backgroundColor: Color(0xFF22512F),
-          ),
-        );
+      // แสดง SnackBar แจ้งสำเร็จ
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Registration successful!"),
+          backgroundColor: Color(0xFF22512F),
+        ),
+      );
 
-        _logger.info('New user registered: $email, username: $username');
+      _logger.info('New user registered: $email, username: $username');
 
-        // ตรวจสอบข้อมูลในฐานข้อมูล
-        await DatabaseHelper.instance.debugPrintUsers();
+      // รอ 2 วินาทีแล้วนำทางไปหน้า login
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
 
-        // รอ 2 วินาทีแล้วนำทางไปหน้า login
-        await Future.delayed(const Duration(seconds: 2));
-        if (!mounted) return;
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      } else {
-        throw Exception('Registration failed');
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     } catch (e) {
       _logger.severe('Registration error occurred', e);
       if (!mounted) return;

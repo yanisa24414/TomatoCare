@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:myapp/services/auth_service.dart';
-import 'package:myapp/screens/auth/register_screen.dart';
-import 'package:myapp/screens/auth/forgot_password.dart';
-import 'package:myapp/services/database_helper.dart';
+import '../../db.dart';
+import 'register_screen.dart';
+import 'forgot_password.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,8 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
 
   Future<void> _handleGuestLogin() async {
-    await AuthService.setMemberStatus(false);
-    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/guest');
   }
 
@@ -32,28 +29,27 @@ class _LoginScreenState extends State<LoginScreen> {
         final password = _passwordController.text;
 
         _logger.info('Login attempt for email: $email');
-        await DatabaseHelper.instance.debugPrintUsers();
 
-        final success = await AuthService.login(email, password);
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+
+        // Try to login using Supabase directly
+        final res =
+            await DatabaseHelper.instance.client.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
 
         if (!mounted) return;
+        Navigator.pop(context); // Remove loading indicator
 
-        if (success) {
-          await AuthService.setMemberStatus(true);
-          if (!mounted) return;
-
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) =>
-                const Center(child: CircularProgressIndicator()),
-          );
-
-          await Future.delayed(const Duration(seconds: 1));
-
-          if (!mounted) return;
-          Navigator.pop(context);
-
+        if (res.user != null) {
+          // Login successful
           Navigator.pushReplacementNamed(context, '/member');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -62,19 +58,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid email or password'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          throw 'Login failed';
         }
       } catch (e) {
-        _logger.severe('Login error occurred', e);
         if (!mounted) return;
+        Navigator.pop(context); // Remove loading indicator
+
+        _logger.severe('Login error occurred', e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login error: $e'),
+            content: Text('Invalid email or password'),
             backgroundColor: Colors.red,
           ),
         );
