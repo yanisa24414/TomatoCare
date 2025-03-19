@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../services/database_helper.dart';
+import '../../db.dart';
 import 'package:logging/logging.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,25 +32,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      // Get current user ID from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('userId');
-
-      if (userId != null) {
-        // Get user data by ID
-        final user = await DatabaseHelper.instance.getUserById(userId);
-        if (user != null) {
-          setState(() {
-            userData = user;
-            _usernameController.text = user['username'];
-          });
-        } else {
-          throw Exception('User not found');
-        }
-      } else {
+      // ดึง current user จาก Supabase
+      final currentUser = DatabaseHelper.instance.client.auth.currentUser;
+      if (currentUser == null) {
         throw Exception('No user logged in');
       }
+
+      print("Current user ID: ${currentUser.id}"); // เพิ่ม debug log
+
+      // ดึงข้อมูล user จากตาราง users โดยใช้ UUID
+      final response = await DatabaseHelper.instance.client
+          .from('users')
+          .select()
+          .eq('id', currentUser.id)
+          .single();
+
+      print("User data: $response"); // เพิ่ม debug log
+
+      if (!mounted) return;
+
+      setState(() {
+        userData = response;
+        _usernameController.text = response['username'];
+      });
     } catch (e) {
+      print("Error details: $e"); // เพิ่ม detailed error log
       _logger.severe('Error loading user data', e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -95,8 +100,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
 
     try {
-      if (userData == null || userData!['id'] == null) {
-        throw Exception('Invalid user data');
+      final currentUser = DatabaseHelper.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user logged in');
       }
 
       showDialog(
@@ -105,11 +111,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      await DatabaseHelper.instance.updateUser(
-        userId: userData!['id'],
-        username: _usernameController.text.trim(),
-        profileImagePath: _profileImage?.path,
-      );
+      // อัพเดทข้อมูลใน users table
+      await DatabaseHelper.instance.client.from('users').update({
+        'username': _usernameController.text.trim(),
+        'profile_image': _profileImage?.path,
+      }).eq('id', currentUser.id);
 
       if (!mounted) return;
       Navigator.pop(context); // ปิด loading

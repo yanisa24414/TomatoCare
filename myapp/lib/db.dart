@@ -41,7 +41,7 @@ class DatabaseHelper {
       _lastRegistrationAttempt = DateTime.now();
       print("Starting registration for email: $email");
 
-      // Create auth user
+      // Create auth user first
       final AuthResponse auth = await client.auth.signUp(
         email: email,
         password: password,
@@ -51,18 +51,15 @@ class DatabaseHelper {
         throw 'Registration failed: No user data received';
       }
 
-      // Insert user data with null profile_image
-      final response = await client
-          .from('users')
-          .insert({
-            'email': email,
-            'username': username,
-            'profile_image': null, // เพิ่ม field นี้
-          })
-          .select()
-          .single();
+      // Then insert user data with auth user's UUID
+      await client.from('users').insert({
+        'id': auth.user!.id, // Use UUID from auth
+        'email': email,
+        'username': username,
+        'profile_image': null,
+      });
 
-      print("User registered with ID: ${response['id']}");
+      print("User registered with ID: ${auth.user!.id}");
     } catch (e, stackTrace) {
       print("Detailed error: $e");
       print("Stack trace: $stackTrace");

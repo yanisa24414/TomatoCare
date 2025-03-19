@@ -156,22 +156,6 @@ class _SettingsScreenMemberState extends State<SettingsScreenMember> {
                       onTap: () {},
                     ),
                     // เพิ่ม ListTile สำหรับ Export Database
-                    ListTile(
-                      leading:
-                          const Icon(Icons.storage, color: Color(0xFF22512F)),
-                      title: const Text('Export Database',
-                          style: TextStyle(fontFamily: 'Questrial')),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _handleDatabaseExport(context),
-                    ),
-                    ListTile(
-                      leading:
-                          const Icon(Icons.restore, color: Color(0xFF22512F)),
-                      title: const Text('Reset Database',
-                          style: TextStyle(fontFamily: 'Questrial')),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _handleResetDatabase(context),
-                    ),
                   ],
                 ),
               ),
