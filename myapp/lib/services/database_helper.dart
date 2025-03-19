@@ -1,7 +1,9 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:logging/logging.dart';
 
 class DatabaseHelper {
+  static final _logger = Logger('DatabaseHelper');
   static Database? _database;
   static final DatabaseHelper instance = DatabaseHelper._();
 
@@ -15,27 +17,27 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'tomato_care.db');
-    print('Debug - Creating database at: $path');
+    _logger.info('Creating database at: $path');
 
     if (await databaseExists(path)) {
-      print('Debug - Database already exists');
+      _logger.info('Database already exists');
     } else {
-      print('Debug - Creating new database');
+      _logger.info('Creating new database');
     }
 
     return await openDatabase(
       path,
       version: 1,
       onCreate: (Database db, int version) async {
-        print('Debug - Creating tables');
+        _logger.info('Creating tables');
         await _onCreate(db, version);
-        print('Debug - Tables created successfully');
+        _logger.info('Tables created successfully');
       },
       onOpen: (Database db) async {
-        print('Debug - Database opened');
+        _logger.info('Database opened');
         final tables = await db
             .query('sqlite_master', where: 'type = ?', whereArgs: ['table']);
-        print('Debug - Available tables: ${tables.map((t) => t['name'])}');
+        _logger.info('Available tables: ${tables.map((t) => t['name'])}');
       },
     );
   }
@@ -126,7 +128,7 @@ class DatabaseHelper {
   // เพิ่ม method เพื่อดูที่อยู่ของ database
   Future<String> getDatabasePath() async {
     String path = join(await getDatabasesPath(), 'tomato_care.db');
-    print('Database path: $path');
+    _logger.info('Database path: $path');
     return path;
   }
 
@@ -138,7 +140,7 @@ class DatabaseHelper {
       where: 'email = ? AND password = ?',
       whereArgs: [email, password],
     );
-    print('Debug - Found user: ${result.length > 0}'); // เพิ่ม debug log
+    _logger.info('User found: ${result.isNotEmpty}');
     return result;
   }
 
@@ -146,9 +148,9 @@ class DatabaseHelper {
   Future<void> debugPrintUsers() async {
     final db = await database;
     final users = await db.query('users');
-    print('Debug - All users in database:');
+    _logger.info('All users in database:');
     for (var user in users) {
-      print(user);
+      _logger.info(user.toString());
     }
   }
 

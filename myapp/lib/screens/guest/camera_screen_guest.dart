@@ -30,25 +30,34 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
 
   Future<void> _takePicture() async {
     if (!_isCameraInitialized) return;
+
     try {
       final image = await controller!.takePicture();
       if (!mounted) return;
 
-      await Future.delayed(const Duration(seconds: 2)); // Use await
-      if (!mounted) return; // Add mounted check after delay
+      final context = this.context;
+      await Future.delayed(const Duration(seconds: 2));
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AnalysisResultScreen(
-            imagePath: image.path,
-            diseaseName: "Leaf Spot Disease",
-            confidence: 92.5,
+      if (!mounted) return;
+
+      // Use stored context and mounted check for navigation
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnalysisResultScreen(
+              imagePath: image.path,
+              diseaseName: "Leaf Spot Disease",
+              confidence: 92.5,
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch (e) {
-      // Handle error
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to capture image')),
+      );
     }
   }
 
@@ -69,17 +78,101 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
     return Scaffold(
       appBar: const CustomAppBar(title: "Camera"),
       backgroundColor: Colors.black,
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: CameraPreview(controller!),
+          // Camera Preview with Overlay
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CameraPreview(controller!),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white, width: 2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  height: MediaQuery.of(context).size.width * 0.8,
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Position leaf in frame',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontFamily: 'Questrial',
+                          shadows: [
+                            Shadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 3,
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: FloatingActionButton(
-              onPressed: _takePicture,
-              backgroundColor: const Color(0xFF7D2424),
-              child: const Icon(Icons.camera_alt), // Moved child to end
+
+          // Top Helper Text
+          Positioned(
+            top: 20,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: const Text(
+                'Center the leaf for best results',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'Questrial',
+                  backgroundColor: Colors.black38,
+                ),
+              ),
+            ),
+          ),
+
+          // Bottom Controls Panel
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 120,
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Center(
+                child: GestureDetector(
+                  onTap: _takePicture,
+                  child: Container(
+                    height: 80,
+                    width: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7D2424),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF7D2424).withAlpha(128),
+                          spreadRadius: 2,
+                          blurRadius: 15,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: 35,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],

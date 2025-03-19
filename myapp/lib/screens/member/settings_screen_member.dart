@@ -12,6 +12,30 @@ class SettingsScreenMember extends StatefulWidget {
 }
 
 class _SettingsScreenMemberState extends State<SettingsScreenMember> {
+  Future<void> _handleDatabaseExport(BuildContext context) async {
+    if (!context.mounted) return;
+
+    await FileUtils.copyDatabaseToAccessibleLocation();
+
+    if (!context.mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DatabaseViewerScreen(),
+      ),
+    );
+  }
+
+  Future<void> _handleSignOut(BuildContext context) async {
+    if (!context.mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,16 +119,7 @@ class _SettingsScreenMemberState extends State<SettingsScreenMember> {
                       title: const Text('Export Database',
                           style: TextStyle(fontFamily: 'Questrial')),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () async {
-                        await FileUtils.copyDatabaseToAccessibleLocation();
-                        if (!mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const DatabaseViewerScreen(),
-                          ),
-                        );
-                      },
+                      onTap: () => _handleDatabaseExport(context),
                     ),
                   ],
                 ),
@@ -124,13 +139,7 @@ class _SettingsScreenMemberState extends State<SettingsScreenMember> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const LoginScreen()),
-                  );
-                },
+                onPressed: () => _handleSignOut(context),
                 child: const Text(
                   'Sign Out',
                   style: TextStyle(

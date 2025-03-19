@@ -24,15 +24,22 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeAnimation =
         Tween<double>(begin: 1.0, end: 0.0).animate(_animationController);
 
-    // Auto navigate after 3 seconds
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
-    });
+    // Store context and use proper mounted checks
+    _handleNavigation();
+  }
+
+  Future<void> _handleNavigation() async {
+    final context = this.context;
+    await Future.delayed(const Duration(seconds: 5));
+
+    if (!mounted) return;
+
+    if (context.mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 
   @override

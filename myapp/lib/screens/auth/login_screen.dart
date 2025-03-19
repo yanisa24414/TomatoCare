@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/screens/auth/register_screen.dart';
-import 'package:myapp/screens/auth/forgot_password.dart'; // Add this import
-import 'package:myapp/services/database_helper.dart'; // เพิ่ม import นี้
+import 'package:myapp/screens/auth/forgot_password.dart';
+import 'package:myapp/services/database_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +13,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _logger = Logger('LoginScreen');
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -29,12 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final email = _emailController.text.trim();
         final password = _passwordController.text;
 
-        // เพิ่ม debug logs
-        print('Login attempt with:');
-        print('Email: $email');
-        print('Password: $password');
-
-        // ดูข้อมูลในฐานข้อมูลทั้งหมด
+        _logger.info('Login attempt for email: $email');
         await DatabaseHelper.instance.debugPrintUsers();
 
         final success = await AuthService.login(email, password);
@@ -45,7 +42,6 @@ class _LoginScreenState extends State<LoginScreen> {
           await AuthService.setMemberStatus(true);
           if (!mounted) return;
 
-          // แสดง loading
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -53,11 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Center(child: CircularProgressIndicator()),
           );
 
-          // รอสักครู่
           await Future.delayed(const Duration(seconds: 1));
 
           if (!mounted) return;
-          Navigator.pop(context); // ปิด loading
+          Navigator.pop(context);
 
           Navigator.pushReplacementNamed(context, '/member');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -75,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (e) {
-        print('Login error: $e'); // เพิ่ม debug log
+        _logger.severe('Login error occurred', e);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -85,22 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

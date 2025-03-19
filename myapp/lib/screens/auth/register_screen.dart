@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/services/database_helper.dart'; // เปลี่ยนจาก db.dart
+import 'package:logging/logging.dart';
+import 'package:myapp/services/database_helper.dart';
 import 'package:myapp/screens/auth/login_screen.dart';
-import 'package:myapp/services/auth_service.dart'; // เพิ่ม import auth_service
+import 'package:myapp/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,6 +12,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _logger = Logger('RegisterScreen');
   final TextEditingController emailController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -20,17 +22,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-  DatabaseHelper? _dbHelper;
-
   @override
   void initState() {
     super.initState();
-    _initDatabase();
-  }
-
-  Future<void> _initDatabase() async {
-    _dbHelper = DatabaseHelper.instance; // แก้ไขการเรียกใช้
-    setState(() {});
   }
 
   @override
@@ -124,10 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         );
 
-        // Debug log
-        print('Debug - New user registered:');
-        print('Email: $email');
-        print('Username: $username');
+        _logger.info('New user registered: $email, username: $username');
 
         // ตรวจสอบข้อมูลในฐานข้อมูล
         await DatabaseHelper.instance.debugPrintUsers();
@@ -144,6 +135,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         throw Exception('Registration failed');
       }
     } catch (e) {
+      _logger.severe('Registration error occurred', e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
