@@ -5,8 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:permission_handler/permission_handler.dart';
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -134,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _loadUserData();
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context); // ปิด loading
+      Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

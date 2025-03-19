@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/common/base_screen.dart';
 import 'utils/file_utils.dart';
-import 'services/database_helper.dart'; // เพิ่ม import
+import 'services/database_helper.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:logging/logging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ตั้งชื่อตัวแปรใหม่ไม่ขึ้นต้นด้วย underscore
+  final mainLogger = Logger('Main');
 
   // ขอสิทธิ์ทั้งหมดที่จำเป็น
   Map<Permission, PermissionStatus> statuses = await [
@@ -19,16 +23,20 @@ void main() async {
   // เช็คสถานะการขอสิทธิ์
   bool allGranted = true;
   statuses.forEach((permission, status) {
-    print('$permission: $status');
+    mainLogger.info('$permission: $status');
     if (!status.isGranted) {
       allGranted = false;
     }
   });
 
+  if (!allGranted) {
+    mainLogger.warning('Not all permissions were granted');
+  }
+
   // สร้างและตรวจสอบฐานข้อมูล
   await DatabaseHelper.instance.database;
-
   await FileUtils.copyDatabaseToAccessibleLocation();
+
   runApp(const MyApp());
 }
 
