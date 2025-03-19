@@ -37,7 +37,6 @@ class _GalleryScreenGuestState extends State<GalleryScreenGuest> {
             builder: (context) => AnalysisResultScreen(
               imagePath: pickedFile.path,
               diseaseName: "Leaf Spot Disease",
-              confidence: 92.5,
             ),
           ),
         );

@@ -16,40 +16,48 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'tomato_care.db');
-    _logger.info('Creating database at: $path');
+    try {
+      String path = join(await getDatabasesPath(), 'tomato_care.db');
+      _logger.info('Creating database at: $path');
 
-    if (await databaseExists(path)) {
-      _logger.info('Database already exists');
-    } else {
-      _logger.info('Creating new database');
+      // ลบฐานข้อมูลเก่าถ้ามี
+      if (await databaseExists(path)) {
+        await deleteDatabase(path);
+        _logger.info('Deleted existing database');
+      }
+
+      _logger.info('Opening database with write permissions');
+      return await openDatabase(
+        path,
+        version: 1,
+        onCreate: (Database db, int version) async {
+          await _onCreate(db, version);
+
+          // เพิ่มข้อมูล user เริ่มต้น
+          await db.insert('users', {
+            'email': 'test@test.com',
+            'password': '123456',
+            'username': 'test',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          _logger.info('Test user added successfully');
+        },
+      );
+    } catch (e) {
+      _logger.severe('Error initializing database: $e');
+      rethrow;
     }
-
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: (Database db, int version) async {
-        _logger.info('Creating tables');
-        await _onCreate(db, version);
-        _logger.info('Tables created successfully');
-      },
-      onOpen: (Database db) async {
-        _logger.info('Database opened');
-        final tables = await db
-            .query('sqlite_master', where: 'type = ?', whereArgs: ['table']);
-        _logger.info('Available tables: ${tables.map((t) => t['name'])}');
-      },
-    );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Users table
+    // Users table with profile_image column
     await db.execute('''
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         username TEXT NOT NULL,
+        profile_image TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     ''');
@@ -159,5 +167,79 @@ class DatabaseHelper {
     final db = await database;
     await db.close();
     _database = null;
+  }
+
+  // เพิ่มเมธอดสำหรับรีเซ็ตฐานข้อมูล
+  Future<void> resetDatabase() async {
+    String path = join(await getDatabasesPath(), 'tomato_care.db');
+    _logger.info('Resetting database');
+
+    await deleteDatabase(path);
+    _database = null; // ทำให้สร้าง instance ใหม่
+
+    await database; // สร้างฐานข้อมูลใหม่พร้อมข้อมูลเริ่มต้น
+  }
+
+  Future<void> updateUsername(int userId, String newUsername) async {
+    final db = await database;
+    await db.update(
+      'users',
+      {'username': newUsername},
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+    _logger.info('Username updated for user ID: $userId');
+  }
+
+  Future<void> updateUser({
+    required int userId,
+    String? username,
+    String? profileImagePath,
+  }) async {
+    try {
+      final db = await database;
+
+      Map<String, dynamic> updates = {};
+      if (username != null && username.isNotEmpty) {
+        updates['username'] = username;
+      }
+      if (profileImagePath != null) {
+        updates['profile_image'] = profileImagePath;
+      }
+
+      if (updates.isEmpty) return;
+
+      final result = await db.update(
+        'users',
+        updates,
+        where: 'id = ?',
+        whereArgs: [userId],
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      _logger.info('Updated user $userId: $result rows affected');
+    } catch (e) {
+      _logger.severe('Error updating user: $e');
+      throw Exception('Failed to update user: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserById(int userId) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'users',
+        where: 'id = ?',
+        whereArgs: [userId],
+      );
+
+      if (results.isNotEmpty) {
+        return results.first;
+      }
+      return null;
+    } catch (e) {
+      _logger.severe('Error getting user by ID: $e');
+      return null;
+    }
   }
 }

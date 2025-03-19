@@ -48,7 +48,6 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
             builder: (context) => AnalysisResultScreen(
               imagePath: image.path,
               diseaseName: "Leaf Spot Disease",
-              confidence: 92.5,
             ),
           ),
         );

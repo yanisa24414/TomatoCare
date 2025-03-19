@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_bar.dart';
 import '../auth/login_screen.dart';
 import '../../utils/file_utils.dart';
-import '../common/database_viewer_screen.dart'; // Add this import
+import '../common/database_viewer_screen.dart';
+import '../../services/database_helper.dart'; // Add this import
+import 'profile_screen.dart'; // Add this import at the top
 
 class SettingsScreenMember extends StatefulWidget {
   const SettingsScreenMember({super.key});
@@ -34,6 +36,40 @@ class _SettingsScreenMemberState extends State<SettingsScreenMember> {
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
+  }
+
+  Future<void> _handleResetDatabase(BuildContext context) async {
+    if (!context.mounted) return;
+
+    // แสดง dialog ยืนยัน
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Database'),
+        content: const Text('This will reset all data. Are you sure?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await DatabaseHelper.instance.resetDatabase();
+      if (!context.mounted) return;
+
+      // กลับไปหน้า login
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 
   @override
@@ -73,7 +109,14 @@ class _SettingsScreenMemberState extends State<SettingsScreenMember> {
                               fontFamily:
                                   'Questrial')), // เปลี่ยนเป็น Questrial
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -120,6 +163,14 @@ class _SettingsScreenMemberState extends State<SettingsScreenMember> {
                           style: TextStyle(fontFamily: 'Questrial')),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () => _handleDatabaseExport(context),
+                    ),
+                    ListTile(
+                      leading:
+                          const Icon(Icons.restore, color: Color(0xFF22512F)),
+                      title: const Text('Reset Database',
+                          style: TextStyle(fontFamily: 'Questrial')),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () => _handleResetDatabase(context),
                     ),
                   ],
                 ),
