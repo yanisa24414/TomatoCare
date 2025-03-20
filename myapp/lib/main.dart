@@ -6,6 +6,8 @@ import 'db.dart'; // Change this import
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logging/logging.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'screens/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,25 +22,25 @@ void main() async {
   // ตั้งชื่อตัวแปรใหม่ไม่ขึ้นต้นด้วย underscore
   final mainLogger = Logger('Main');
 
-  // ขอสิทธิ์ทั้งหมดที่จำเป็น
-  Map<Permission, PermissionStatus> statuses = await [
-    Permission.storage,
-    Permission.photos,
-    Permission.mediaLibrary,
-    Permission.camera,
-  ].request();
+  // เช็คว่าเป็น web หรือไม่ก่อนขอ permissions
+  if (!kIsWeb) {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.camera,
+      Permission.photos,
+    ].request();
 
-  // เช็คสถานะการขอสิทธิ์
-  bool allGranted = true;
-  statuses.forEach((permission, status) {
-    mainLogger.info('$permission: $status');
-    if (!status.isGranted) {
-      allGranted = false;
+    // เช็คสถานะ permissions
+    bool allGranted = true;
+    statuses.forEach((permission, status) {
+      mainLogger.info('$permission: $status');
+      if (!status.isGranted) {
+        allGranted = false;
+      }
+    });
+
+    if (!allGranted) {
+      mainLogger.warning('Not all permissions were granted');
     }
-  });
-
-  if (!allGranted) {
-    mainLogger.warning('Not all permissions were granted');
   }
 
   // Test database connection
@@ -61,12 +63,14 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Tomato Leaf Disease Analyzer',
       theme: ThemeData(primarySwatch: Colors.green),
-      initialRoute: '/splash',
+      // เลือก initial route ตาม platform
+      initialRoute: kIsWeb ? '/login' : '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
         '/guest': (context) => const BaseScreen(isMember: false),
         '/member': (context) => const BaseScreen(isMember: true),
-        '/register': (context) => const RegisterScreen(), // เพิ่มบรรทัดนี้
+        '/register': (context) => const RegisterScreen(),
       },
     );
   }
