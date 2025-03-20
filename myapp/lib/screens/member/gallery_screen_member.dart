@@ -82,13 +82,13 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
                         Icon(
                           Icons.add_photo_alternate_outlined,
                           size: 80,
-                          color: Color(0xFF22512F),
+                          color: Color(0xFF7D2424),
                         ),
                         SizedBox(height: 16),
                         Text(
                           "Select an image to analyze",
                           style: TextStyle(
-                            color: Color(0xFF22512F),
+                            color: Color(0xFF7D2424),
                             fontSize: 18,
                             fontFamily: 'Questrial',
                           ),
@@ -100,7 +100,7 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
             ElevatedButton(
               onPressed: _pickImage,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF22512F),
+                backgroundColor: const Color(0xFF7D2424),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                 shape: RoundedRectangleBorder(
