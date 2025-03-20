@@ -153,12 +153,12 @@ class _CameraScreenMemberState extends State<CameraScreenMember> {
                     height: 80,
                     width: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF22512F),
+                      color: const Color(0xFF7D2424),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 4),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF22512F).withAlpha(128),
+                          color: const Color(0xFF7D2424).withAlpha(128),
                           spreadRadius: 2,
                           blurRadius: 15,
                         ),
