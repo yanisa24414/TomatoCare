@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../services/database_helper.dart';
 import 'package:logging/logging.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../db.dart'; // เปลี่ยนเป็นใช้ Supabase DatabaseHelper
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,20 +32,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      // Get current user ID from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('userId');
+      // ดึงข้อมูล user ปัจจุบันจาก Supabase
+      final currentUser = DatabaseHelper.instance.client.auth.currentUser;
 
-      if (userId != null) {
-        // Get user data by ID
-        final user = await DatabaseHelper.instance.getUserById(userId);
-        if (user != null) {
+      if (currentUser != null) {
+        // ดึงข้อมูลเพิ่มเติมจากตาราง users
+        final userData = await DatabaseHelper.instance.client
+            .from('users')
+            .select()
+            .eq('id', currentUser.id)
+            .single();
+
+        if (mounted) {
           setState(() {
-            userData = user;
-            _usernameController.text = user['username'];
+            this.userData = userData;
+            _usernameController.text = userData['username'] ?? '';
           });
-        } else {
-          throw Exception('User not found');
         }
       } else {
         throw Exception('No user logged in');
@@ -95,9 +96,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
 
     try {
-      if (userData == null || userData!['id'] == null) {
-        throw Exception('Invalid user data');
-      }
+      final currentUser = DatabaseHelper.instance.client.auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
 
       showDialog(
         context: context,
@@ -105,22 +105,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      await DatabaseHelper.instance.updateUser(
-        userId: userData!['id'],
-        username: _usernameController.text.trim(),
-        profileImagePath: _profileImage?.path,
-      );
+      // อัพเดทข้อมูลใน users table
+      await DatabaseHelper.instance.client.from('users').update({
+        'username': _usernameController.text.trim(),
+      }).eq('id', currentUser.id);
+
+      // ถ้ามีการเปลี่ยนรูปโปรไฟล์
+      if (_profileImage != null) {
+        final fileExt = _profileImage!.path.split('.').last;
+        final fileName = '${currentUser.id}/profile.$fileExt';
+
+        // อัพโหลดรูปไปที่ Supabase Storage
+        await DatabaseHelper.instance.client.storage
+            .from('avatars')
+            .upload(fileName, _profileImage!);
+
+        // อัพเดท profile_url ในตาราง users
+        final imageUrl = DatabaseHelper.instance.client.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+
+        await DatabaseHelper.instance.client.from('users').update({
+          'profile_image_url': imageUrl,
+        }).eq('id', currentUser.id);
+      }
 
       if (!mounted) return;
       Navigator.pop(context); // ปิด loading
 
-      setState(() {
-        userData!['username'] = _usernameController.text.trim();
-        if (_profileImage != null) {
-          userData!['profile_image'] = _profileImage!.path;
-        }
-        _isEditing = false;
-      });
+      setState(() => _isEditing = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -190,10 +203,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: const Color(0xFF22512F),
-                    backgroundImage: _profileImage != null
-                        ? FileImage(_profileImage!)
-                        : null,
-                    child: _profileImage == null
+                    backgroundImage: userData?['profile_image_url'] != null
+                        ? NetworkImage(userData!['profile_image_url'])
+                        : (_profileImage != null
+                            ? FileImage(_profileImage!)
+                            : null) as ImageProvider?,
+                    child: (userData?['profile_image_url'] == null &&
+                            _profileImage == null)
                         ? const Icon(Icons.person,
                             size: 80, color: Colors.white)
                         : null,
