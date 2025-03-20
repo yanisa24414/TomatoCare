@@ -49,25 +49,79 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
     return Scaffold(
       appBar: const CustomAppBar(title: "Gallery"),
       backgroundColor: const Color(0xFFFDF6E3),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _selectedImage != null
-                ? Image.file(
-                    _selectedImage!,
-                    width: 250,
-                    height: 250,
-                    fit: BoxFit.cover,
-                  )
-                : const Icon(Icons.image, size: 100, color: Colors.grey),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
+            Container(
+              width: double.infinity,
+              height: 350,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: _selectedImage != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.file(
+                        _selectedImage!,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 80,
+                          color: Color(0xFF22512F),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          "Select an image to analyze",
+                          style: TextStyle(
+                            color: Color(0xFF22512F),
+                            fontSize: 18,
+                            fontFamily: 'Questrial',
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
               onPressed: _pickImage,
-              icon: const Icon(Icons.photo_library),
-              label: const Text("เลือกภาพจากแกลอรี่"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF22512F),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                elevation: 4,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.photo_library, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text(
+                    "Choose from Gallery",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: 'Questrial',
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
