@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io'; // เพิ่มบรรทัดนี้
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -128,6 +129,43 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> queryUsers() async {
     final response = await client.from('users').select();
     return response;
+  }
+
+  // เพิ่ม method สำหรับอัพเดทรูปโปรไฟล์
+  Future<String?> updateProfileImage(String userId, File imageFile) async {
+    try {
+      final fileExt = imageFile.path.split('.').last;
+      final fileName = '$userId/profile.$fileExt';
+
+      // อัพโหลดไฟล์ไปที่ storage
+      await client.storage.from('avatars').upload(
+            fileName,
+            imageFile,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      // สร้าง public URL
+      final imageUrl = client.storage.from('avatars').getPublicUrl(fileName);
+
+      // อัพเดท URL ในตาราง users
+      await client.from('users').update({
+        'profile_image_url': imageUrl,
+      }).eq('id', userId);
+
+      return imageUrl;
+    } catch (e) {
+      print('Error updating profile image: $e');
+      return null;
+    }
+  }
+
+  // เพิ่ม method สำหรับลบรูปโปรไฟล์เก่า
+  Future<void> deleteProfileImage(String userId) async {
+    try {
+      await client.storage.from('avatars').remove(['$userId/profile.*']);
+    } catch (e) {
+      print('Error deleting old profile image: $e');
+    }
   }
 
   // No need for explicit close with Supabase

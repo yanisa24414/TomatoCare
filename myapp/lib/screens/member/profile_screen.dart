@@ -110,24 +110,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'username': _usernameController.text.trim(),
       }).eq('id', currentUser.id);
 
-      // ถ้ามีการเปลี่ยนรูปโปรไฟล์
+      // ถ้ามีการเลือกรูปโปรไฟล์ใหม่
       if (_profileImage != null) {
-        final fileExt = _profileImage!.path.split('.').last;
-        final fileName = '${currentUser.id}/profile.$fileExt';
+        // อัพเดทรูปโปรไฟล์
+        final imageUrl = await DatabaseHelper.instance.updateProfileImage(
+          currentUser.id,
+          _profileImage!,
+        );
 
-        // อัพโหลดรูปไปที่ Supabase Storage
-        await DatabaseHelper.instance.client.storage
-            .from('avatars')
-            .upload(fileName, _profileImage!);
-
-        // อัพเดท profile_url ในตาราง users
-        final imageUrl = DatabaseHelper.instance.client.storage
-            .from('avatars')
-            .getPublicUrl(fileName);
-
-        await DatabaseHelper.instance.client.from('users').update({
-          'profile_image_url': imageUrl,
-        }).eq('id', currentUser.id);
+        if (imageUrl != null) {
+          setState(() {
+            userData?['profile_image_url'] = imageUrl;
+          });
+        }
       }
 
       if (!mounted) return;
@@ -142,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-      await _loadUserData();
+      await _loadUserData(); // โหลดข้อมูลใหม่
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
