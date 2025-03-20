@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  supabase_flutter: ^2.0.0
+  supabase_flutter: ^2.0.0  # เพิ่มบรรทัดนี้
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.2.2
   camera: ^0.11.1

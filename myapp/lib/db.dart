@@ -30,7 +30,7 @@ class DatabaseHelper {
     required String password,
   }) async {
     try {
-      // Check rate limit
+      // Check if enough time has passed since last attempt
       if (_lastRegistrationAttempt != null) {
         final timeDiff = DateTime.now().difference(_lastRegistrationAttempt!);
         if (timeDiff.inSeconds < 30) {
@@ -41,25 +41,28 @@ class DatabaseHelper {
       _lastRegistrationAttempt = DateTime.now();
       print("Starting registration for email: $email");
 
-      // Create auth user first
+      // First create auth user
       final AuthResponse auth = await client.auth.signUp(
         email: email,
         password: password,
+        data: {'username': username},
+        emailRedirectTo: null, // เพิ่มบรรทัดนี้แทน options
       );
 
       if (auth.user == null) {
         throw 'Registration failed: No user data received';
       }
 
-      // Then insert user data with auth user's UUID
+      print("Auth user created with ID: ${auth.user!.id}");
+
+      // Then store additional user data
       await client.from('users').insert({
-        'id': auth.user!.id, // Use UUID from auth
+        'id': auth.user!.id,
         'email': email,
         'username': username,
-        'profile_image': null,
-      });
+      }); // Remove .execute()
 
-      print("User registered with ID: ${auth.user!.id}");
+      print("User data inserted successfully");
     } catch (e, stackTrace) {
       print("Detailed error: $e");
       print("Stack trace: $stackTrace");
@@ -74,28 +77,50 @@ class DatabaseHelper {
     }
   }
 
-  Future<User?> login({
+  // แก้ไข login method
+  Future<User?> loginUser({
     required String email,
     required String password,
   }) async {
     try {
       print("Attempting login for email: $email");
 
-      final AuthResponse res = await client.auth.signInWithPassword(
+      // Try to sign in with Supabase Auth
+      final AuthResponse response = await client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      if (res.user != null) {
-        print("Login successful for user: ${res.user!.email}");
-        return res.user;
-      } else {
-        print("Login failed: No user data received");
-        return null;
+      // Check if we got a valid user and session
+      if (response.user != null && response.session != null) {
+        print("Auth successful, getting user data");
+
+        // Get user data from our users table
+        final userData = await client
+            .from('users')
+            .select()
+            .eq('id', response.user!.id)
+            .single();
+
+        print("User data retrieved: $userData");
+
+        // Store session
+        await client.auth.setSession(response.session!.refreshToken!);
+
+        return response.user;
       }
+
+      print("Login failed - no user data or session");
+      return null;
     } catch (e) {
       print("Login error: $e");
-      throw 'Invalid email or password';
+      if (e.toString().contains('Invalid login credentials')) {
+        throw 'Invalid email or password';
+      } else if (e.toString().contains('not found')) {
+        throw 'User not found';
+      } else {
+        throw 'Login failed: Please try again';
+      }
     }
   }
 

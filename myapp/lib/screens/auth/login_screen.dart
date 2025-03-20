@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import '../../db.dart';
-import 'register_screen.dart';
-import 'forgot_password.dart';
+import 'package:myapp/screens/auth/register_screen.dart';
+import 'package:myapp/screens/auth/forgot_password.dart';
+import '../../services/auth_service.dart';
+import '../../db.dart'; // ใช้อันนี้อันเดียว ลบ database_helper.dart ออก
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +20,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
 
   Future<void> _handleGuestLogin() async {
+    await AuthService.setMemberStatus(false);
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/guest');
   }
 
@@ -38,18 +41,18 @@ class _LoginScreenState extends State<LoginScreen> {
               const Center(child: CircularProgressIndicator()),
         );
 
-        // Try to login using Supabase directly
-        final res =
-            await DatabaseHelper.instance.client.auth.signInWithPassword(
+        // Try to login with Supabase
+        final user = await DatabaseHelper.instance.loginUser(
           email: email,
           password: password,
         );
 
         if (!mounted) return;
-        Navigator.pop(context); // Remove loading indicator
+        Navigator.pop(context); // Hide loading
 
-        if (res.user != null) {
-          // Login successful
+        if (user != null) {
+          print("Login successful, navigating to member screen");
+          await AuthService.setMemberStatus(true);
           Navigator.pushReplacementNamed(context, '/member');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -58,16 +61,15 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else {
-          throw 'Login failed';
+          throw 'Invalid email or password';
         }
       } catch (e) {
         if (!mounted) return;
-        Navigator.pop(context); // Remove loading indicator
+        Navigator.pop(context); // Hide loading
 
-        _logger.severe('Login error occurred', e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Invalid email or password'),
+            content: Text(e.toString()),
             backgroundColor: Colors.red,
           ),
         );
