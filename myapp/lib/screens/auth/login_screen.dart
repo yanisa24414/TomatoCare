@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // โลโก้
-                    Container(
+                    SizedBox(
                       height: 200,
                       width: 300,
                       child: Image.asset(

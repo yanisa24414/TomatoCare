@@ -137,12 +137,19 @@ class DatabaseHelper {
       final fileExt = imageFile.path.split('.').last;
       final fileName = '$userId/profile.$fileExt';
 
+      // เปลี่ยนเป็นใช้ bytes แทน File
+      final fileBytes = await imageFile.readAsBytes();
+
       // อัพโหลดไฟล์ไปที่ storage
-      await client.storage.from('avatars').upload(
+      await client.storage.from('avatars').uploadBinary(
             fileName,
-            imageFile,
-            fileOptions: const FileOptions(upsert: true),
+            fileBytes,
+            fileOptions:
+                const FileOptions(contentType: 'image/jpeg', upsert: true),
           );
+
+      // รอสักครู่ให้ไฟล์อัพโหลดเสร็จ
+      await Future.delayed(const Duration(seconds: 1));
 
       // สร้าง public URL
       final imageUrl = client.storage.from('avatars').getPublicUrl(fileName);
@@ -166,6 +173,77 @@ class DatabaseHelper {
     } catch (e) {
       print('Error deleting old profile image: $e');
     }
+  }
+
+  // เพิ่ม method สำหรับดึงข้อมูล posts
+  // ลบฟังก์ชัน getPostsStream ตัวแรกออก เพราะซ้ำซ้อนกัน
+
+  // เพิ่มโพสต์ใหม่
+  Future<void> createPost({
+    required String content,
+    String? imageUrl,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw 'Not logged in';
+
+    await client.from('posts').insert({
+      'user_id': user.id,
+      'content': content,
+      'image_url': imageUrl,
+    });
+  }
+
+  // แก้ไขฟังก์ชัน getPostsStream ใหม่
+  Stream<List<Map<String, dynamic>>> getPostsStream() {
+    return client
+        .from('posts')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .asyncMap((posts) async {
+          // Convert list of posts with user data
+          final postsWithUsers = await Future.wait(
+            posts.map((post) async {
+              final userData = await client
+                  .from('users')
+                  .select()
+                  .eq('id', post['user_id'])
+                  .single();
+
+              return {
+                ...post,
+                'user': userData,
+              };
+            }),
+          );
+
+          print('Posts with users: $postsWithUsers'); // Debug log
+          return postsWithUsers;
+        });
+  }
+
+  // เพิ่มคอมเมนต์
+  Future<void> addComment({
+    required String postId,
+    required String content,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw 'Not logged in';
+
+    await client.from('comments').insert({
+      'post_id': postId,
+      'user_id': user.id,
+      'content': content,
+    });
+  }
+
+  // ดึงคอมเมนต์ของโพสต์แบบ realtime
+  Stream<List<Map<String, dynamic>>> getCommentsStream(String postId) {
+    return client
+        .from('comments')
+        .stream(primaryKey: ['id'])
+        .eq('post_id', postId)
+        .order('created_at')
+        .map((data) => data);
   }
 
   // No need for explicit close with Supabase

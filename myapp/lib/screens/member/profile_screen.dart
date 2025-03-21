@@ -198,13 +198,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: const Color(0xFF22512F),
-                    backgroundImage: userData?['profile_image_url'] != null
-                        ? NetworkImage(userData!['profile_image_url'])
-                        : (_profileImage != null
-                            ? FileImage(_profileImage!)
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : (userData?['profile_image_url'] != null
+                            ? NetworkImage(userData!['profile_image_url'])
                             : null) as ImageProvider?,
-                    child: (userData?['profile_image_url'] == null &&
-                            _profileImage == null)
+                    child: (_profileImage == null &&
+                            userData?['profile_image_url'] == null)
                         ? const Icon(Icons.person,
                             size: 80, color: Colors.white)
                         : null,

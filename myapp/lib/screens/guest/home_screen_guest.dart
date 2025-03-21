@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/app_bar.dart';
-import 'package:myapp/widgets/post_card.dart';
+import '../../db.dart'; // เพิ่ม import DatabaseHelper
+import '../../widgets/post_card_guest.dart';
 
 class HomeScreenGuest extends StatelessWidget {
   const HomeScreenGuest({super.key});
@@ -31,31 +32,29 @@ class HomeScreenGuest extends StatelessWidget {
 
           // รายการโพสต์ (สไลด์ได้)
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(10.0),
-              children: const [
-                PostCard(
-                  username: "SomSri K.",
-                  postText: "โรคนี้เกิดขึ้นบ่อยไหมคะ",
-                  imagePath: "assets/leaf1.jpg",
-                ),
-                PostCard(
-                  username: "Poom V.",
-                  postText: "มีใครมีแหล่งขายปุ๋ยและยารักษาโรคที่ครบวงจรไหมครับ",
-                  imagePath: null,
-                ),
-                PostCard(
-                  username: "Nui T.",
-                  postText: "อยากรู้ว่ามีวิธีป้องกันโรคพวกนี้ไหม",
-                  imagePath: null,
-                ),
-                PostCard(
-                  username: "Arthit B.",
-                  postText:
-                      "ต้นมะเขือเทศที่บ้านเริ่มเป็นแบบนี้ มีวิธีแก้ไขไหม?",
-                  imagePath: "assets/leaf2.jpg",
-                ),
-              ],
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              // ระบุ type ให้ชัดเจน
+              stream: DatabaseHelper.instance.getPostsStream(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final posts = snapshot.data!;
+                return ListView.builder(
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return PostCardGuest(post: post);
+                  },
+                );
+              },
             ),
           ),
         ],

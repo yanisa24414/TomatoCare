@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import '../../db.dart'; // แก้ import path
-import 'login_screen.dart';
+import 'package:myapp/screens/auth/login_screen.dart';
+
+import '../../db.dart'; // ใช้แค่อันนี้อันเดียว และลบ database_helper.dart ออก
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -98,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // ถ้าผ่านการตรวจสอบทั้งหมด ดำเนินการลงทะเบียน
     try {
-      // เปลี่ยนจาก AuthService เป็น DatabaseHelper
+      // ใช้ DatabaseHelper แทน AuthService
       await DatabaseHelper.instance.registerUser(
         email: email,
         username: username,
@@ -130,8 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Registration failed: $e",
-              style: const TextStyle(fontFamily: 'Questrial')),
+          content: Text("Registration failed: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -143,7 +143,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final isWeb = MediaQuery.of(context).size.width > 800;
     final height = MediaQuery.of(context).size.height;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final isKeyboardVisible = keyboardHeight > 0;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -151,36 +150,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: isWeb
             ? Center(
-                // Web Layout
+                // Web layout
                 child: Container(
                   constraints: BoxConstraints(maxWidth: 500),
                   padding: EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 40),
-                      // Registration Form
-                      Container(
-                        padding: EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
-                              blurRadius: 10,
-                              spreadRadius: 5,
-                            ),
-                          ],
+                  child: Container(
+                    padding: EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 5,
                         ),
-                        child: _buildRegistrationForm(),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Create New Account',
+                            style: TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF7D2424),
+                              fontFamily: 'Questrial',
+                            ),
+                          ),
+                          SizedBox(height: 30),
+                          _buildTextField(
+                              emailController, "Enter your email", Icons.email),
+                          _buildTextField(usernameController,
+                              "Choose a username", Icons.person),
+                          _buildTextField(passwordController,
+                              "Enter your password", Icons.lock,
+                              obscureText: !_isPasswordVisible,
+                              toggleObscureText: () {
+                            setState(
+                                () => _isPasswordVisible = !_isPasswordVisible);
+                          }),
+                          _buildTextField(confirmPasswordController,
+                              "Confirm your password", Icons.lock,
+                              obscureText: !_isConfirmPasswordVisible,
+                              toggleObscureText: () {
+                            setState(() => _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible);
+                          }),
+                          SizedBox(height: 20),
+                          _buildButton(
+                              "Register", Color(0xFF7D2424), _register),
+                          SizedBox(height: 15),
+                          Center(
+                            child: GestureDetector(
+                              onTap: () => Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const LoginScreen()),
+                              ),
+                              child: Text(
+                                "Go to Login",
+                                style: TextStyle(
+                                  fontFamily: 'Questrial',
+                                  color: Color(0xFF22512F),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               )
             : Stack(
-                // Mobile Layout
+                // Mobile layout
                 children: [
                   // Background Image (mobile only)
                   Container(
@@ -192,12 +242,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
-                  // Rest of mobile layout
+                  // Bottom Section with Form
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOut,
                     margin: EdgeInsets.only(
-                      top: isKeyboardVisible
+                      top: keyboardHeight > 0
                           ? height * 0.15 // ขยับขึ้นเมื่อแป้นพิมพ์แสดง
                           : height * 0.35, // ตำแหน่งปกติ
                     ),
@@ -271,57 +321,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
       ),
-    );
-  }
-
-  Widget _buildRegistrationForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Create New Account',
-          style: TextStyle(
-            fontSize: 25,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF7D2424),
-            fontFamily: 'Questrial',
-          ),
-        ),
-        SizedBox(height: 30),
-        _buildTextField(emailController, "Enter your email", Icons.email),
-        _buildTextField(usernameController, "Choose a username", Icons.person),
-        _buildTextField(passwordController, "Enter your password", Icons.lock,
-            obscureText: !_isPasswordVisible, toggleObscureText: () {
-          setState(() => _isPasswordVisible = !_isPasswordVisible);
-        }),
-        _buildTextField(
-            confirmPasswordController, "Confirm your password", Icons.lock,
-            obscureText: !_isConfirmPasswordVisible, toggleObscureText: () {
-          setState(
-              () => _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
-        }),
-        SizedBox(height: 20),
-        _buildButton("Register", const Color(0xFF7D2424), _register),
-        SizedBox(height: 15),
-        Center(
-          child: GestureDetector(
-            onTap: () => Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            ),
-            child: Text(
-              "Go to Login",
-              style: TextStyle(
-                fontFamily: 'Questrial',
-                color: const Color(0xFF22512F),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
