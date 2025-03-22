@@ -331,6 +331,19 @@ class DatabaseHelper {
     }
   }
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await client.auth.resetPasswordForEmail(
+        email,
+        redirectTo:
+            'https://tomatocarepj.netlify.app/reset-password', // แก้ไข URL ให้ตรงกับ domain จริง
+      );
+    } catch (e) {
+      print('Error sending password reset email: $e');
+      throw 'Failed to send password reset email: $e';
+    }
+  }
+
   // No need for explicit close with Supabase
   void close() {
     // Cleanup if needed

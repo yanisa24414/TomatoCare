@@ -45,9 +45,41 @@ class HomeScreenGuest extends StatelessWidget {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.data!.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.article_outlined,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No posts yet',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600],
+                              fontFamily: 'Questrial',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Stay tuned for upcoming posts!',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[500],
+                              fontFamily: 'Questrial',
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
 

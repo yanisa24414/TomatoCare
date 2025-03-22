@@ -151,6 +151,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showPasswordResetDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Row(
+          children: const [
+            Icon(Icons.lock_outline, color: Color(0xFF7D2424)),
+            SizedBox(width: 10),
+            Text(
+              'Reset Password',
+              style: TextStyle(
+                color: Color(0xFF7D2424),
+                fontFamily: 'Questrial',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'We will send a password reset link to your email:',
+              style: TextStyle(
+                fontFamily: 'Questrial',
+                fontSize: 16,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              userData?['email'] ?? '',
+              style: TextStyle(
+                fontFamily: 'Questrial',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF7D2424),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey,
+                fontFamily: 'Questrial',
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await DatabaseHelper.instance.sendPasswordResetEmail(
+                  userData?['email'],
+                );
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Password reset link has been sent to your email',
+                    ),
+                    backgroundColor: Color(0xFF22512F),
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(e.toString())),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7D2424),
+            ),
+            child: Text(
+              'Send Link',
+              style: TextStyle(
+                fontFamily: 'Questrial',
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -259,6 +352,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       label: 'Member Since',
                       value: _formatDate(userData?['created_at']),
                       isEditable: false,
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.lock_outline,
+                          color: Color(0xFF22512F)),
+                      title: const Text(
+                        'Reset Password',
+                        style: TextStyle(fontFamily: 'Questrial'),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: _showPasswordResetDialog,
                     ),
                   ],
                 ),
