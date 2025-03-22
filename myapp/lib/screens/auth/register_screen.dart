@@ -234,7 +234,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   // Background Image (mobile only)
                   Container(
-                    height: height * 0.4,
+                    height: height * 0.5,
                     decoration: const BoxDecoration(
                       image: DecorationImage(
                         image: AssetImage('assets/start.jpg'),
@@ -244,12 +244,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   // Bottom Section with Form
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 400),
                     curve: Curves.easeOut,
                     margin: EdgeInsets.only(
                       top: keyboardHeight > 0
                           ? height * 0.15 // ขยับขึ้นเมื่อแป้นพิมพ์แสดง
-                          : height * 0.35, // ตำแหน่งปกติ
+                          : height * 0.45, // ตำแหน่งปกติ
                     ),
                     decoration: const BoxDecoration(
                       color: Colors.white,
