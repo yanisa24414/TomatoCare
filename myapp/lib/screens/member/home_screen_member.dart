@@ -40,31 +40,36 @@ class _HomeScreenMemberState extends State<HomeScreenMember> {
 
           // ✅ รายการโพสต์ (สไลด์ได้)
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              // ระบุ type ให้ชัดเจน
-              stream: DatabaseHelper.instance.getPostsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final posts = snapshot.data!;
-                return ListView.builder(
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    return PostCardMember(post: posts[index]);
-                  },
-                );
+            child: RefreshIndicator(
+              onRefresh: () async {
+                setState(() {});
               },
+              child: StreamBuilder<List<Map<String, dynamic>>>(
+                // ระบุ type ให้ชัดเจน
+                stream: DatabaseHelper.instance.getPostsStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final posts = snapshot.data!;
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      return PostCardMember(post: posts[index]);
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
       ),
-      // ลบ floatingActionButton ออก
     );
   }
 }

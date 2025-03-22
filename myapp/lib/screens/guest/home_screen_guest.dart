@@ -32,29 +32,37 @@ class HomeScreenGuest extends StatelessWidget {
 
           // รายการโพสต์ (สไลด์ได้)
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              // ระบุ type ให้ชัดเจน
-              stream: DatabaseHelper.instance.getPostsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                final posts = snapshot.data!;
-                return ListView.builder(
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return PostCardGuest(post: post);
-                  },
-                );
+            child: RefreshIndicator(
+              onRefresh: () async {
+                // เมื่อดึงลงมาจะ reload หน้า
+                // ไม่ต้องทำอะไรเพิ่มเติมเพราะ StreamBuilder จะ reload เอง
               },
+              child: StreamBuilder<List<Map<String, dynamic>>>(
+                // ระบุ type ให้ชัดเจน
+                stream: DatabaseHelper.instance.getPostsStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  final posts = snapshot.data!;
+                  return ListView.builder(
+                    physics:
+                        const AlwaysScrollableScrollPhysics(), // เพิ่มบรรทัดนี้
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      final post = posts[index];
+                      return PostCardGuest(post: post);
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
