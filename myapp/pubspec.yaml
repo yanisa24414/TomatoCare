@@ -24,6 +24,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.0
   image_picker: ^1.0.7
   logging: ^1.2.0  # Add this line
+  timeago: ^3.6.1
 
 dev_dependencies:
   flutter_test:

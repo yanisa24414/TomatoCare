@@ -181,7 +181,7 @@ class DatabaseHelper {
   // เพิ่มโพสต์ใหม่
   Future<void> createPost({
     required String content,
-    String? imageUrl,
+    List<String>? imageUrls, // เปลี่ยนจาก String? เป็น List<String>?
   }) async {
     final user = client.auth.currentUser;
     if (user == null) throw 'Not logged in';
@@ -189,7 +189,7 @@ class DatabaseHelper {
     await client.from('posts').insert({
       'user_id': user.id,
       'content': content,
-      'image_url': imageUrl,
+      'image_urls': imageUrls, // เปลี่ยนชื่อ column ในฐานข้อมูลด้วย
     });
   }
 
@@ -200,25 +200,72 @@ class DatabaseHelper {
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
         .asyncMap((posts) async {
-          // Convert list of posts with user data
-          final postsWithUsers = await Future.wait(
+          final postsWithData = await Future.wait(
             posts.map((post) async {
+              // ดึงข้อมูล user
               final userData = await client
                   .from('users')
                   .select()
                   .eq('id', post['user_id'])
                   .single();
 
+              // ดึงจำนวน likes
+              final likes = await client
+                  .from('likes')
+                  .select('id')
+                  .eq('post_id', post['id']);
+
+              // เช็คว่า current user ไลค์โพสต์นี้หรือยัง
+              final user = client.auth.currentUser;
+              bool isLiked = false;
+              if (user != null) {
+                final userLike = await client
+                    .from('likes')
+                    .select()
+                    .eq('post_id', post['id'])
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                isLiked = userLike != null;
+              }
+
               return {
                 ...post,
                 'user': userData,
+                'likes_count': likes.length,
+                'is_liked': isLiked,
               };
             }),
           );
-
-          print('Posts with users: $postsWithUsers'); // Debug log
-          return postsWithUsers;
+          return postsWithData;
         });
+  }
+
+  // เพิ่มฟังก์ชันสำหรับจัดการ likes
+  Future<void> toggleLike(String postId) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw 'Not logged in';
+
+    // เช็คว่าเคยไลค์หรือยัง
+    final likes = await client
+        .from('likes')
+        .select()
+        .eq('post_id', postId)
+        .eq('user_id', user.id);
+
+    if (likes.isEmpty) {
+      // ถ้ายังไม่เคยไลค์ ให้เพิ่ม like
+      await client.from('likes').insert({
+        'post_id': postId,
+        'user_id': user.id,
+      });
+    } else {
+      // ถ้าเคยไลค์แล้ว ให้ลบ like
+      await client
+          .from('likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+    }
   }
 
   // เพิ่มคอมเมนต์

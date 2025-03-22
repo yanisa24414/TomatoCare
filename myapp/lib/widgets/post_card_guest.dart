@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class PostCardGuest extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -9,6 +10,12 @@ class PostCardGuest extends StatelessWidget {
     if (dateString == null) return '';
     final date = DateTime.parse(dateString);
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _formatTimeAgo(String? dateString) {
+    if (dateString == null) return '';
+    final date = DateTime.parse(dateString).toLocal();
+    return timeago.format(date);
   }
 
   @override
@@ -29,7 +36,7 @@ class PostCardGuest extends StatelessWidget {
                   : null,
             ),
             title: Text(post['user']?['username'] ?? 'Unknown'),
-            subtitle: Text(_formatDate(post['created_at'])),
+            subtitle: Text(_formatTimeAgo(post['created_at'])),
           ),
 
           // Post content
@@ -38,27 +45,70 @@ class PostCardGuest extends StatelessWidget {
             child: Text(post['content'] ?? ''),
           ),
 
-          // Post image - แก้ไขส่วนนี้
-          if (post['image_url'] != null)
-            Container(
-              width: double.infinity,
-              height: 200,
-              child: Image.network(
-                post['image_url'],
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  print('Error loading image: $error');
-                  return Icon(Icons.error);
+          // แก้ไขส่วนแสดงรูปภาพ
+          if (post['image_urls'] != null &&
+              (post['image_urls'] as List).isNotEmpty)
+            SizedBox(
+              height: 300,
+              child: PageView.builder(
+                itemCount: (post['image_urls'] as List).length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.network(
+                      post['image_urls'][index],
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        print('Error loading image: $error');
+                        return Container(
+                          color: Colors.grey[200],
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error_outline,
+                                  size: 40, color: Colors.red),
+                              SizedBox(height: 8),
+                              Text('Could not load image',
+                                  style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
                 },
               ),
             ),
 
           // Divider
           const Divider(),
+
+          // Like count for guests
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                const Icon(Icons.favorite_border, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text('${post['likes_count'] ?? 0} likes'),
+              ],
+            ),
+          ),
 
           // Login prompt
           Padding(
