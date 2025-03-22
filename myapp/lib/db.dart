@@ -290,7 +290,45 @@ class DatabaseHelper {
         .stream(primaryKey: ['id'])
         .eq('post_id', postId)
         .order('created_at')
-        .map((data) => data);
+        .asyncMap((comments) async {
+          // ดึงข้อมูล user สำหรับแต่ละ comment
+          final commentsWithUser = await Future.wait(
+            comments.map((comment) async {
+              final userData = await client
+                  .from('users')
+                  .select()
+                  .eq('id', comment['user_id'])
+                  .single();
+
+              return {
+                ...comment,
+                'user': userData,
+              };
+            }),
+          );
+          return commentsWithUser;
+        });
+  }
+
+  // เพิ่มฟังก์ชันลบ comment
+  Future<void> deleteComment(String commentId) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw 'Not logged in';
+
+    try {
+      print('Deleting comment: $commentId'); // Debug log
+
+      final result = await client
+          .from('comments')
+          .delete()
+          .eq('id', commentId)
+          .eq('user_id', user.id);
+
+      print('Delete result: $result'); // Debug log
+    } catch (e) {
+      print('Error deleting comment: $e'); // Debug log
+      throw 'Failed to delete comment: $e';
+    }
   }
 
   // No need for explicit close with Supabase

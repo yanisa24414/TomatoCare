@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../db.dart'; // เพิ่ม import
 
 class PostCardGuest extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -16,6 +17,25 @@ class PostCardGuest extends StatelessWidget {
     if (dateString == null) return '';
     final date = DateTime.parse(dateString).toLocal();
     return timeago.format(date);
+  }
+
+  String _formatCommentTime(String? dateString) {
+    if (dateString == null) return '';
+    final date = DateTime.parse(dateString).toLocal();
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 
   @override
@@ -98,7 +118,7 @@ class PostCardGuest extends StatelessWidget {
           // Divider
           const Divider(),
 
-          // Like count for guests
+          // Like count and login prompt
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
@@ -106,26 +126,76 @@ class PostCardGuest extends StatelessWidget {
                 const Icon(Icons.favorite_border, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text('${post['likes_count'] ?? 0} likes'),
+                const SizedBox(width: 16),
+                const Icon(Icons.comment_outlined, color: Colors.grey),
               ],
             ),
           ),
 
-          // Login prompt
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/login'),
-              child: const Text(
-                'Sign in to comment and interact with posts',
-                style: TextStyle(
-                  color: Color(0xFF7D2424),
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  decoration: TextDecoration.underline,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+          // Comments section
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: DatabaseHelper.instance.getCommentsStream(post['id']),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return Column(
+                children: [
+                  ...snapshot.data!.map((comment) {
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: comment['user']
+                                    ?['profile_image_url'] !=
+                                null
+                            ? NetworkImage(comment['user']['profile_image_url'])
+                            : null,
+                        child: comment['user']?['profile_image_url'] == null
+                            ? const Icon(Icons.person, size: 20)
+                            : null,
+                      ),
+                      title: Row(
+                        children: [
+                          Text(
+                            comment['user']?['username'] ?? 'Unknown',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatCommentTime(comment['created_at']),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      subtitle: Text(comment['content']),
+                    );
+                  }).toList(),
+
+                  // Login prompt for commenting
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, '/login'),
+                      child: const Text(
+                        'Sign in to comment and interact with posts',
+                        style: TextStyle(
+                          color: Color(0xFF7D2424),
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                          decoration: TextDecoration.underline,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
