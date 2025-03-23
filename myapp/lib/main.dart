@@ -6,9 +6,17 @@ import 'services/database_helper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logging/logging.dart';
 import 'screens/auth/reset_password_page.dart'; // เพิ่ม import นี้
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase without authFlowType
+  await Supabase.initialize(
+    url: 'https://nzsquekmnibttwcpobam.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56c3F1ZWttbmlidHR3Y3BvYmFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTY1MTcsImV4cCI6MjA1Nzk3MjUxN30.PjuhCdWjd_hT2ucRzegLOqlEXyziNb7REbQoVs0kkIo',
+  );
 
   // ตั้งชื่อตัวแปรใหม่ไม่ขึ้นต้นด้วย underscore
   final mainLogger = Logger('Main');
