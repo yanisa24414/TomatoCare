@@ -1,169 +1,169 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../db.dart'; // เพิ่ม import
 
-class AnalysisResultScreen extends StatelessWidget {
+class AnalysisResultScreen extends StatefulWidget {
   final String imagePath;
-  final String diseaseName;
+  final Map<String, double> predictions;
 
   const AnalysisResultScreen({
     super.key,
     required this.imagePath,
-    required this.diseaseName,
+    required this.predictions,
   });
 
-  String _getDiseaseDescription() {
-    // Add disease descriptions based on the disease name
-    switch (diseaseName) {
-      case "Leaf Spot Disease":
-        return "โรคใบจุด (Leaf Spot) เป็นโรคที่พบบ่อยในมะเขือเทศ สาเหตุเกิดจากเชื้อรา Septoria lycopersici "
-            "อาการที่พบ:\n"
-            "• จุดแผลสีน้ำตาลถึงเทาบนใบ\n"
-            "• ขอบแผลมีสีเหลือง\n"
-            "• ใบจะเหลืองและร่วง\n\n"
-            "วิธีป้องกันและรักษา:\n"
-            "• ฉีดพ่นสารป้องกันกำจัดเชื้อรา\n"
-            "• หลีกเลี่ยงการให้น้ำที่ใบ\n"
-            "• กำจัดใบที่เป็นโรคออก";
-      default:
-        return "ไม่พบข้อมูลโรคนี้ในระบบ";
+  @override
+  State<AnalysisResultScreen> createState() => _AnalysisResultScreenState();
+}
+
+class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
+  Map<String, dynamic>? diseaseInfo;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDiseaseInfo();
+  }
+
+  Future<void> _loadDiseaseInfo() async {
+    try {
+      // หา disease ที่มีความน่าจะเป็นสูงสุด
+      String topDisease = widget.predictions.entries.reduce((a, b) {
+        print(
+            'Comparing: ${a.key}: ${a.value} vs ${b.key}: ${b.value}'); // Debug log
+        return a.value > b.value ? a : b;
+      }).key;
+
+      print('Top disease detected: $topDisease'); // Debug log
+      print('All predictions: ${widget.predictions}'); // Debug log
+
+      // ดึงข้อมูลโรคจาก Supabase
+      final info = await DatabaseHelper.instance.getDiseaseInfo(topDisease);
+      print('Disease info from database: $info'); // Debug log
+
+      if (mounted) {
+        setState(() {
+          diseaseInfo = info;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error in _loadDiseaseInfo: $e'); // Debug log
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading disease information: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF6E3),
       appBar: AppBar(
+        title: const Text('Analysis Result'),
         backgroundColor: const Color(0xFF7D2424),
-        title: const Text(
-          "Analysis Result",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Questrial',
-          ),
-        ),
-        centerTitle: true,
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Section
-            Container(
-              width: double.infinity,
-              height: 300,
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(50),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.file(
-                  File(imagePath),
-                  fit: BoxFit.cover,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(File(widget.imagePath)),
+            ),
+            const SizedBox(height: 24),
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (diseaseInfo != null) ...[
+              Text(
+                'Diagnosis: ${diseaseInfo!['name']}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF7D2424),
+                  fontFamily: 'Questrial',
                 ),
               ),
-            ),
-
-            // Result Card
-            Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(20),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ],
+              const SizedBox(height: 16),
+              _buildSection('Description', diseaseInfo!['description']),
+              _buildSection('Symptoms', diseaseInfo!['symptoms']),
+              _buildSection('Treatment', diseaseInfo!['treatment']),
+              _buildSection('Prevention', diseaseInfo!['prevention']),
+              const SizedBox(height: 16),
+              const Text(
+                'Confidence Levels:',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Questrial',
+                ),
               ),
-              child: Column(
-                children: [
-                  // Disease Name Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF7D2424),
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    child: Text(
-                      diseaseName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Questrial',
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                  // Disease Description
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      _getDiseaseDescription(),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.5,
-                        fontFamily: 'Questrial',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Action Buttons
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text("ถ่ายภาพใหม่"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF22512F),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.save),
-                      label: const Text("บันทึกผล"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7D2424),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+              ...widget.predictions.entries
+                  .map((e) => _buildProbabilityBar(e.key, e.value)),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSection(String title, String content) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Questrial',
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            content,
+            style: const TextStyle(
+              fontSize: 16,
+              fontFamily: 'Questrial',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProbabilityBar(String label, double probability) {
+    // แสดงเฉพาะโรคที่มีความน่าจะเป็นมากกว่า 10%
+    if (probability < 0.1) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontFamily: 'Questrial'),
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: probability,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(
+              probability > 0.5 ? const Color(0xFF7D2424) : Colors.grey,
+            ),
+          ),
+          Text(
+            '${(probability * 100).toStringAsFixed(1)}%',
+            style: const TextStyle(fontFamily: 'Questrial'),
+          ),
+        ],
       ),
     );
   }

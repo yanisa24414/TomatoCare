@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
+import '../../services/ml_service.dart';
 
 class GalleryScreenMember extends StatefulWidget {
   const GalleryScreenMember({super.key});
@@ -15,30 +16,55 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
   File? _selectedImage;
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxHeight: 1200,
+        maxWidth: 1200,
+      );
 
-    if (!mounted) return;
+      if (pickedFile != null) {
+        setState(() => _selectedImage = File(pickedFile.path));
 
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
+        // Show loading
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
 
-      final context = this.context;
-      await Future.delayed(const Duration(seconds: 2));
+        // Process image
+        final results = await MLService.instance.processImage(_selectedImage!);
 
-      if (!mounted) return;
+        // Debug log
+        print('ML Results: $results');
 
-      if (context.mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnalysisResultScreen(
-              imagePath: pickedFile.path,
-              diseaseName: "Leaf Spot Disease",
-            ),
-          ),
+        if (mounted) {
+          Navigator.pop(context); // Hide loading
+
+          if (results.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AnalysisResultScreen(
+                  imagePath: pickedFile.path,
+                  predictions: results,
+                ),
+              ),
+            );
+          } else {
+            throw Exception('No predictions returned from ML model');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error: $e');
+      if (mounted) {
+        Navigator.pop(context); // Hide loading if showing
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error analyzing image: $e')),
         );
       }
     }

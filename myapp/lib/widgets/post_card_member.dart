@@ -6,7 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 class PostCardMember extends StatefulWidget {
   final Map<String, dynamic> post;
 
-  const PostCardMember({Key? key, required this.post}) : super(key: key);
+  const PostCardMember({super.key, required this.post});
 
   @override
   State<PostCardMember> createState() => _PostCardMemberState();

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'dart:io'; // เพิ่ม import นี้
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
+import '../../services/ml_service.dart'; // เพิ่ม import
 
 class CameraScreenGuest extends StatefulWidget {
   const CameraScreenGuest({super.key});
@@ -40,23 +42,51 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
 
       if (!mounted) return;
 
-      // Use stored context and mounted check for navigation
+      // ส่ง mock predictions แทนการใช้ diseaseName
       if (context.mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnalysisResultScreen(
-              imagePath: image.path,
-              diseaseName: "Leaf Spot Disease",
-            ),
-          ),
-        );
+        await _analyzeCapturedImage(image.path);
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to capture image')),
       );
+    }
+  }
+
+  Future<void> _analyzeCapturedImage(String imagePath) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // ใช้ MLService แทน mock data
+      final results = await MLService.instance.processImage(File(imagePath));
+
+      if (mounted) {
+        Navigator.pop(context); // Hide loading
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnalysisResultScreen(
+              imagePath: imagePath,
+              predictions: results,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error: $e');
+      if (mounted) {
+        Navigator.pop(context); // Hide loading if showing
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error analyzing image: $e')),
+        );
+      }
     }
   }
 

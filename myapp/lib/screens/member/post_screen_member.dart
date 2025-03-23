@@ -13,7 +13,7 @@ class PostScreenMember extends StatefulWidget {
 
 class _PostScreenMemberState extends State<PostScreenMember> {
   final TextEditingController _contentController = TextEditingController();
-  List<File> _selectedImages = []; // เปลี่ยนจาก File? เป็น List<File>
+  final List<File> _selectedImages = []; // เปลี่ยนจาก File? เป็น List<File>
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -23,11 +23,9 @@ class _PostScreenMemberState extends State<PostScreenMember> {
       imageQuality: 85, // ปรับคุณภาพรูป
     );
 
-    if (pickedFiles != null) {
-      setState(() {
-        _selectedImages.addAll(pickedFiles.map((xFile) => File(xFile.path)));
-      });
-    }
+    setState(() {
+      _selectedImages.addAll(pickedFiles.map((xFile) => File(xFile.path)));
+    });
   }
 
   Future<void> _createPost() async {

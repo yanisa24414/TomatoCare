@@ -5,7 +5,7 @@ import '../db.dart'; // เพิ่ม import
 class PostCardGuest extends StatelessWidget {
   final Map<String, dynamic> post;
 
-  const PostCardGuest({Key? key, required this.post}) : super(key: key);
+  const PostCardGuest({super.key, required this.post});
 
   String _formatDate(String? dateString) {
     if (dateString == null) return '';
@@ -174,7 +174,7 @@ class PostCardGuest extends StatelessWidget {
                       ),
                       subtitle: Text(comment['content']),
                     );
-                  }).toList(),
+                  }),
 
                   // Login prompt for commenting
                   Padding(

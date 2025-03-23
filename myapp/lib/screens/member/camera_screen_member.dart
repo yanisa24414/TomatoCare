@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'dart:io'; // เพิ่ม import นี้
 import '../../widgets/app_bar.dart';
-
 import '../common/analysis_result_screen.dart';
+import '../../services/ml_service.dart'; // เพิ่ม import นี้
 
 class CameraScreenMember extends StatefulWidget {
   const CameraScreenMember({super.key});
@@ -42,21 +43,55 @@ class _CameraScreenMemberState extends State<CameraScreenMember> {
       if (!mounted) return;
 
       if (context.mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AnalysisResultScreen(
-              imagePath: image.path,
-              diseaseName: "Leaf Spot Disease",
-            ),
-          ),
-        );
+        await _analyzeCapturedImage(image.path);
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to capture image')),
       );
+    }
+  }
+
+  Future<void> _analyzeCapturedImage(String imagePath) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final results = await MLService.instance.processImage(File(imagePath));
+
+      // Debug log
+      print('ML Results: $results');
+
+      if (mounted) {
+        Navigator.pop(context); // Hide loading
+
+        if (results.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AnalysisResultScreen(
+                imagePath: imagePath,
+                predictions: results,
+              ),
+            ),
+          );
+        } else {
+          throw Exception('No predictions returned from ML model');
+        }
+      }
+    } catch (e) {
+      print('Error: $e');
+      if (mounted) {
+        Navigator.pop(context); // Hide loading if showing
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error analyzing image: $e')),
+        );
+      }
     }
   }
 

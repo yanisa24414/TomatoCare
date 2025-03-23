@@ -343,6 +343,41 @@ class DatabaseHelper {
     }
   }
 
+  Future<Map<String, dynamic>> getDiseaseInfo(String diseaseName) async {
+    try {
+      final response = await client
+          .from('diseases')
+          .select()
+          .eq('name', diseaseName)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) {
+        print('Disease not found in database: $diseaseName'); // Debug log
+        // ส่งค่าเริ่มต้นถ้าไม่พบข้อมูล
+        return {
+          'name': diseaseName,
+          'description': 'Disease information not available.',
+          'symptoms': 'No symptoms information available.',
+          'treatment': 'No treatment information available.',
+          'prevention': 'No prevention information available.',
+        };
+      }
+
+      return response;
+    } catch (e) {
+      print('Error getting disease info: $e');
+      // ส่งค่าเริ่มต้นเมื่อเกิดข้อผิดพลาด
+      return {
+        'name': diseaseName,
+        'description': 'Error loading disease information.',
+        'symptoms': 'Error loading symptoms.',
+        'treatment': 'Error loading treatment.',
+        'prevention': 'Error loading prevention.',
+      };
+    }
+  }
+
   // No need for explicit close with Supabase
   void close() {
     // Cleanup if needed
