@@ -14,11 +14,12 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="/">  <!-- เปลี่ยนจาก $FLUTTER_BASE_HREF เป็น / -->
+  <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,22 +32,25 @@
 
   <title>myapp</title>
   <link rel="manifest" href="manifest.json">
+
+  <script>
+    // Add this line before loading Flutter
+    window.FLUTTER_BASE_HREF = "/";
+  </script>
 </head>
 <body>
   <script>
-    var serviceWorkerVersion = null;
+    window.SUPABASE_URL = "https://nzsquekmnibttwcpobam.supabase.co";
+    window.SUPABASE_ANON_KEY = "your_anon_key";
   </script>
+
   <script src="flutter.js" defer></script>
   <script>
-    window.addEventListener('load', function(ev) {
-      _flutter.loader.loadEntrypoint({
+    window.addEventListener('load', function() {
+      // The new initialization code
+      _flutter.loader.load({
         serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
+          serviceWorkerVersion: '{{flutter_service_worker_version}}',
         }
       });
     });

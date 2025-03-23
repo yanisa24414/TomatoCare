@@ -1,7 +1,7 @@
 [build]
-  base = "myapp"    # เพิ่มบรรทัดนี้
-  command = "flutter build web"
-  publish = "build/web"
+  base = "/"
+  command = "cd myapp && flutter build web --web-renderer html --base-href /"
+  publish = "myapp/build/web"
 
 [[redirects]]
   from = "/*"
@@ -9,10 +9,8 @@
   status = 200
   force = true
 
-# ตั้งค่า headers สำหรับ SPA
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
-    Content-Security-Policy = "frame-ancestors 'none'"
