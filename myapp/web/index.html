@@ -34,8 +34,9 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
-    // Add this line before loading Flutter
     window.FLUTTER_BASE_HREF = "/";
+    window.SUPABASE_URL = process.env.SUPABASE_URL;
+    window.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
   </script>
 </head>
 <body>
