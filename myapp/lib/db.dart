@@ -335,8 +335,7 @@ class DatabaseHelper {
     try {
       await client.auth.resetPasswordForEmail(
         email,
-        // แก้ไข redirectTo เป็น URL ของ Netlify
-        redirectTo: 'https://tomatocarepj.netlify.app/reset-password',
+        redirectTo: 'https://tomatocarepj.netlify.app/auth/reset-password',
       );
     } catch (e) {
       print('Error sending password reset email: $e');
