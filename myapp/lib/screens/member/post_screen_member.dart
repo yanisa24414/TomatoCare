@@ -139,7 +139,7 @@ class _PostScreenMemberState extends State<PostScreenMember> {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 image: DecorationImage(
                                   image: FileImage(_selectedImages[index]),
                                   fit: BoxFit.cover,
@@ -172,7 +172,7 @@ class _PostScreenMemberState extends State<PostScreenMember> {
 
                   // Buttons
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(11),
                     child: Row(
                       children: [
                         // Add Image Button
@@ -187,16 +187,16 @@ class _PostScreenMemberState extends State<PostScreenMember> {
                             label: const Text(
                               'Add Image',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 13,
                                 fontFamily: 'Questrial',
                                 color: Colors.white,
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF22512F),
-                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               elevation: 2,
                             ),
@@ -215,14 +215,14 @@ class _PostScreenMemberState extends State<PostScreenMember> {
                             label: const Text(
                               'Post',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 13,
                                 fontFamily: 'Questrial',
                                 color: Colors.white,
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF7D2424),
-                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

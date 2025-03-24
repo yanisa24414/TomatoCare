@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_bar.dart';
 import '../auth/login_screen.dart';
 import 'profile_screen.dart';
+import 'history_screen.dart';
 
 class SettingsScreenMember extends StatefulWidget {
   const SettingsScreenMember({super.key});
@@ -102,7 +103,14 @@ class _SettingsScreenMemberState extends State<SettingsScreenMember> {
                               fontFamily:
                                   'Questrial')), // เปลี่ยนเป็น Questrial
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HistoryScreen(),
+                          ),
+                        );
+                      },
                     ),
                     // เพิ่ม ListTile สำหรับ Export Database
                   ],

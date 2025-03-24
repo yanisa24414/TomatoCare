@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../db.dart'; // เพิ่ม import
+import '../../db.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // เพิ่ม import นี้
 
 class AnalysisResultScreen extends StatefulWidget {
   final String imagePath;
@@ -28,7 +29,6 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
 
   Future<void> _loadDiseaseInfo() async {
     try {
-      // หา disease ที่มีความน่าจะเป็นสูงสุด
       String topDisease = widget.predictions.entries.reduce((a, b) {
         print(
             'Comparing: ${a.key}: ${a.value} vs ${b.key}: ${b.value}'); // Debug log
@@ -38,15 +38,60 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
       print('Top disease detected: $topDisease'); // Debug log
       print('All predictions: ${widget.predictions}'); // Debug log
 
-      // ดึงข้อมูลโรคจาก Supabase
-      final info = await DatabaseHelper.instance.getDiseaseInfo(topDisease);
-      print('Disease info from database: $info'); // Debug log
+      // เช็คว่าเป็นข้อความแจ้งเตือนพิเศษหรือไม่
+      if (topDisease == 'Uncertain result - Please retake photo' ||
+          topDisease == 'Not a tomato leaf') {
+        final info = {
+          'name': topDisease,
+          'description': 'Please take a clearer photo of a tomato leaf.',
+          'symptoms': 'N/A',
+          'treatment': 'N/A',
+          'prevention': 'N/A',
+        };
 
-      if (mounted) {
-        setState(() {
-          diseaseInfo = info;
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            diseaseInfo = info;
+            isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // ตรวจสอบว่าเป็นโรคที่รู้จักหรือไม่
+      final validDiseases = [
+        'Late blight',
+        'Early blight',
+        'Bacterial spot',
+        'healthy',
+        'Leaf Mold',
+        'Septoria leaf spot',
+        'Spider mites Two-spotted spider mites',
+        'Target Spot',
+        'Tomato mosaic virus',
+        'Tomato Yellow Leaf Curl Virus'
+      ];
+
+      if (validDiseases.contains(topDisease)) {
+        final info = await DatabaseHelper.instance.getDiseaseInfo(topDisease);
+
+        // บันทึกลงฐานข้อมูลเฉพาะกรณีที่เป็น member และเป็นโรคที่รู้จัก
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          await DatabaseHelper.instance.client.from('scan_history').insert({
+            'user_id': user.id,
+            'image_path': widget.imagePath,
+            'disease_name': topDisease,
+            'confidence': widget.predictions[topDisease],
+          });
+        }
+
+        if (mounted) {
+          setState(() {
+            diseaseInfo = info;
+            isLoading = false;
+          });
+        }
       }
     } catch (e) {
       print('Error in _loadDiseaseInfo: $e'); // Debug log

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../db.dart'; // เพิ่ม import
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:logging/logging.dart';
 
 // เปลี่ยนจาก StatelessWidget เป็น StatefulWidget
 class PostCardMember extends StatefulWidget {
@@ -13,6 +14,8 @@ class PostCardMember extends StatefulWidget {
 }
 
 class _PostCardMemberState extends State<PostCardMember> {
+  static final _log = Logger('PostCardMember');
+
   late bool _isLiked;
   late int _likesCount;
 
@@ -206,10 +209,91 @@ class _PostCardMemberState extends State<PostCardMember> {
     );
   }
 
+  void _showDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded,
+                color: Color(0xFF7D2424), size: 28),
+            SizedBox(width: 10),
+            Text(
+              'Delete Post?',
+              style: TextStyle(
+                color: Color(0xFF7D2424),
+                fontFamily: 'Questrial',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to delete this post? This action cannot be undone.',
+          style: TextStyle(
+            fontFamily: 'Questrial',
+            fontSize: 16,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontFamily: 'Questrial',
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await DatabaseHelper.instance.deletePost(widget.post['id']);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Post deleted successfully'),
+                    backgroundColor: Color(0xFF22512F),
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to delete post: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7D2424),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Questrial',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+        actionsPadding: const EdgeInsets.all(20),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    print('Post data: ${widget.post}'); // Debug log
-    print('Image URLs: ${widget.post['image_urls']}'); // Debug log
+    _log.fine('Building post card: ${widget.post}'); // แทน print ด้วย _log.fine
+    _log.fine('Image URLs: ${widget.post['image_urls']}'); // Debug log
 
     return Card(
       margin: const EdgeInsets.all(8),
@@ -227,6 +311,14 @@ class _PostCardMemberState extends State<PostCardMember> {
             ),
             title: Text(widget.post['user']?['username'] ?? 'Unknown'),
             subtitle: Text(_formatTimeAgo(widget.post['created_at'])),
+            trailing: widget.post['user_id'] ==
+                    DatabaseHelper.instance.client.auth.currentUser?.id
+                ? IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: Color(0xFF7D2424)),
+                    onPressed: _showDeleteDialog,
+                  )
+                : null,
           ),
           // Post content
           Padding(
@@ -264,8 +356,10 @@ class _PostCardMemberState extends State<PostCardMember> {
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
-                        print('Error loading image: $error');
-                        print('Image URL: ${widget.post['image_urls'][index]}');
+                        _log.warning(
+                            'Error loading image: $error'); // แทน print
+                        _log.warning(
+                            'Image URL: ${widget.post['image_urls'][index]}');
                         return Container(
                           color: Colors.grey[200],
                           child: Column(

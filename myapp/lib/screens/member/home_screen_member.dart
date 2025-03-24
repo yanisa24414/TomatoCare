@@ -12,6 +12,31 @@ class HomeScreenMember extends StatefulWidget {
 }
 
 class _HomeScreenMemberState extends State<HomeScreenMember> {
+  final TextEditingController _searchController = TextEditingController();
+  Stream<List<Map<String, dynamic>>> _postsStream =
+      DatabaseHelper.instance.getPostsStream();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final searchTerm = _searchController.text.trim();
+    setState(() {
+      _postsStream = searchTerm.isEmpty
+          ? DatabaseHelper.instance.getPostsStream()
+          : DatabaseHelper.instance.searchPosts(searchTerm);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,6 +48,7 @@ class _HomeScreenMemberState extends State<HomeScreenMember> {
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: TextField(
+              controller: _searchController, // Add controller
               decoration: InputDecoration(
                 hintText: "Search...",
                 hintStyle:
@@ -42,11 +68,11 @@ class _HomeScreenMemberState extends State<HomeScreenMember> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                setState(() {});
+                _onSearchChanged(); // Refresh search results
               },
               child: StreamBuilder<List<Map<String, dynamic>>>(
-                // ระบุ type ให้ชัดเจน
-                stream: DatabaseHelper.instance.getPostsStream(),
+                stream:
+                    _postsStream, // Use _postsStream instead of getPostsStream()
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));

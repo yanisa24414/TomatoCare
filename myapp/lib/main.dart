@@ -11,6 +11,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ตั้งค่า logging
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    // ใช้ debugPrint แทน print เพื่อป้องกัน throttling
+    debugPrint('${record.level.name}: ${record.time}: ${record.message}');
+  });
+
   // Initialize Supabase without authFlowType
   await Supabase.initialize(
     url: 'https://nzsquekmnibttwcpobam.supabase.co',
