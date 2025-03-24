@@ -2,11 +2,9 @@ import 'dart:io';
 import 'dart:math' show exp, sqrt, pow;
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
-import 'package:logging/logging.dart';
 
 class MLService {
   static final MLService instance = MLService._internal();
-  static final _log = Logger('MLService');
   late Interpreter _interpreter;
   bool _isInitialized = false;
 
@@ -18,7 +16,7 @@ class MLService {
       _interpreter = await Interpreter.fromAsset('assets/model.tflite');
       _isInitialized = true;
     } catch (e) {
-      _log.severe('Error initializing model: $e');
+      print('Error initializing model: $e');
       rethrow;
     }
   }
@@ -64,11 +62,11 @@ class MLService {
     variance = sqrt(variance / totalPixels);
     double greenRatio = greenPixels / totalPixels;
 
-    _log.info('Image Analysis:');
-    _log.info('Green Ratio: ${(greenRatio * 100).toStringAsFixed(2)}%');
-    _log.info(
+    print('Image Analysis:');
+    print('Green Ratio: ${(greenRatio * 100).toStringAsFixed(2)}%');
+    print(
         'Color Averages - R: ${avgRed.toStringAsFixed(2)}, G: ${avgGreen.toStringAsFixed(2)}, B: ${avgBlue.toStringAsFixed(2)}');
-    _log.info('Green Variance: ${variance.toStringAsFixed(2)}');
+    print('Green Variance: ${variance.toStringAsFixed(2)}');
 
     // เงื่อนไขการตรวจสอบใบมะเขือเทศ
     bool isGreenDominant = avgGreen > avgRed * 1.2 && avgGreen > avgBlue * 1.2;
@@ -81,7 +79,7 @@ class MLService {
 
   Future<Map<String, double>> processImage(File imageFile) async {
     if (!_isInitialized) await initialize();
-    _log.info('=== Starting image processing ===');
+    print('=== Starting image processing ===');
 
     // เก็บข้อมูลการ preprocessing เพื่อตรวจสอบ
     Map<String, dynamic> preprocessingStats = {};
@@ -101,7 +99,7 @@ class MLService {
 
       // ตรวจสอบว่าเป็นใบมะเขือเทศหรือไม่
       if (!_isValidTomatoLeaf(enhancedImage)) {
-        _log.info('Image validation failed: Not a tomato leaf');
+        print('Image validation failed: Not a tomato leaf');
         return {'Not a tomato leaf': 1.0};
       }
 
@@ -113,17 +111,17 @@ class MLService {
 
       // ประมวลผลด้วยโมเดล
       var predictions = await _runInference(processedImage);
-      _log.info('Raw predictions: $predictions');
+      print('Raw predictions: $predictions');
 
       // ตรวจสอบความน่าเชื่อถือของผลลัพธ์
       if (!_isReliablePrediction(predictions)) {
-        _log.info('Prediction reliability check failed');
+        print('Prediction reliability check failed');
         return {'Uncertain result - Please retake photo': 1.0};
       }
 
       return predictions;
     } catch (e) {
-      _log.severe('Error in processImage: $e');
+      print('Error in processImage: $e');
       rethrow;
     }
   }
@@ -170,10 +168,10 @@ class MLService {
     stats['avgBlue'] = avgBlue;
 
     // แสดง debug logs
-    _log.info('Image statistics:');
-    _log.info('Green ratio: ${(greenRatio * 100).toStringAsFixed(2)}%');
-    _log.info('Average brightness: ${avgBrightness.toStringAsFixed(2)}');
-    _log.info(
+    print('Image statistics:');
+    print('Green ratio: ${(greenRatio * 100).toStringAsFixed(2)}%');
+    print('Average brightness: ${avgBrightness.toStringAsFixed(2)}');
+    print(
         'Average RGB: R=${avgRed.toStringAsFixed(2)}, G=${avgGreen.toStringAsFixed(2)}, B=${avgBlue.toStringAsFixed(2)}');
 
     // ปรับเกณฑ์การตัดสินใจ
@@ -210,12 +208,12 @@ class MLService {
 
     // 1. ปรับปรุงการ preprocess ภาพ
     final preprocessedImage = _preprocessImage(image);
-    _log.info(
+    print(
         'Preprocessed image size: ${preprocessedImage.width}x${preprocessedImage.height}');
 
     // 2. แปลงเป็น tensor ด้วยวิธีที่ถูกต้อง
     var input = _imageToTensor(preprocessedImage);
-    _log.info('Input tensor shape: 1x128x128x3');
+    print('Input tensor shape: 1x128x128x3');
 
     // 3. เพิ่มการ validate input
     _validateInputTensor(input);
@@ -230,10 +228,10 @@ class MLService {
         List.filled(outputShape[0] * outputShape[1], 0.0).reshape(outputShape);
 
     // 4. เพิ่ม debug logs สำหรับ inference
-    _log.info('Running model inference...');
+    print('Running model inference...');
     _interpreter.run(input, output);
     final results = output[0] as List<double>;
-    _log.info('Raw model output: $results');
+    print('Raw model output: $results');
 
     // 5. ปรับปรุงการคำนวณ softmax และการกรองผล
     final predictions = _processPredictions(results);
@@ -330,9 +328,9 @@ class MLService {
       }
     }
 
-    _log.info('\nFiltered predictions:');
+    print('\nFiltered predictions:');
     predictions.forEach((key, value) {
-      _log.info('$key: ${(value * 100).toStringAsFixed(2)}%');
+      print('$key: ${(value * 100).toStringAsFixed(2)}%');
     });
 
     return predictions;

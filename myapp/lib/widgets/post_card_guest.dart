@@ -7,12 +7,6 @@ class PostCardGuest extends StatelessWidget {
 
   const PostCardGuest({super.key, required this.post});
 
-  String _formatDate(String? dateString) {
-    if (dateString == null) return '';
-    final date = DateTime.parse(dateString);
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
   String _formatTimeAgo(String? dateString) {
     if (dateString == null) return '';
     final date = DateTime.parse(dateString).toLocal();

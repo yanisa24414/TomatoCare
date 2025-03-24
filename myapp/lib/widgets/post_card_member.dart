@@ -26,13 +26,6 @@ class _PostCardMemberState extends State<PostCardMember> {
     _likesCount = widget.post['likes_count'] ?? 0;
   }
 
-  // เพิ่มฟังก์ชัน _formatDate
-  String _formatDate(String? dateString) {
-    if (dateString == null) return '';
-    final date = DateTime.parse(dateString);
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
   String _formatTimeAgo(String? dateString) {
     if (dateString == null) return '';
     final date = DateTime.parse(dateString).toLocal();
