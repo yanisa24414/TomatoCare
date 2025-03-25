@@ -30,33 +30,11 @@ class _PostScreenMemberState extends State<PostScreenMember> {
 
   Future<void> _createPost() async {
     try {
-      List<String> imageUrls = [];
-      if (_selectedImages.isNotEmpty) {
-        final user = DatabaseHelper.instance.client.auth.currentUser;
-        if (user != null) {
-          // อัพโหลดรูปทีละรูป
-          for (var image in _selectedImages) {
-            final fileExt = image.path.split('.').last.toLowerCase();
-            final fileName =
-                'post_${DateTime.now().millisecondsSinceEpoch}_${imageUrls.length}.$fileExt';
-
-            await DatabaseHelper.instance.client.storage
-                .from('post-images')
-                .upload(fileName, image);
-
-            final imageUrl = DatabaseHelper.instance.client.storage
-                .from('post-images')
-                .getPublicUrl(fileName);
-
-            imageUrls.add(imageUrl);
-          }
-        }
-      }
-
-      // สร้างโพสต์พร้อมรูปภาพหลายรูป
+      // สร้างโพสต์พร้อมรูปภาพ
       await DatabaseHelper.instance.createPost(
         content: _contentController.text.trim(),
-        imageUrls: imageUrls, // เปลี่ยนเป็นส่ง array ของ URLs
+        images:
+            _selectedImages, // เปลี่ยนจาก imageUrls เป็น images เพื่อให้ตรงกับ DatabaseHelper
       );
 
       if (!mounted) return;
@@ -69,10 +47,11 @@ class _PostScreenMemberState extends State<PostScreenMember> {
       // กลับไปหน้า home_screen_member
       Navigator.pushReplacementNamed(context, '/member');
     } catch (e) {
-      print('Error in _createPost: $e'); // Debug log
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating post: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating post: $e')),
+        );
+      }
     }
   }
 

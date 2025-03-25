@@ -44,28 +44,34 @@ class DatabaseHelper {
       _lastRegistrationAttempt = DateTime.now();
       _log.info("Starting registration for email: $email");
 
-      // First create auth user
+      // สร้าง auth user โดยไม่ต้องรอการยืนยัน email
       final AuthResponse auth = await client.auth.signUp(
         email: email,
         password: password,
-        data: {'username': username},
-        emailRedirectTo: null, // เพิ่มบรรทัดนี้แทน options
+        data: {
+          'username': username,
+          'email_confirm': true, // เพิ่มบรรทัดนี้เพื่อข้ามการยืนยัน email
+        },
+        emailRedirectTo: null,
       );
 
-      if (auth.user == null) {
-        throw 'Registration failed: No user data received';
-      }
+      if (auth.user == null) throw 'Registration failed: No user data received';
 
       _log.info("Auth user created with ID: ${auth.user!.id}");
 
-      // Then store additional user data
+      // บันทึกข้อมูลใน users table
       await client.from('users').insert({
         'id': auth.user!.id,
         'email': email,
         'username': username,
-      }); // Remove .execute()
+      });
 
-      _log.info("User data inserted successfully");
+      // ทำการ login อัตโนมัติ
+      if (auth.session != null) {
+        await client.auth.setSession(auth.session!.refreshToken!);
+      }
+
+      _log.info("User registered and logged in successfully");
     } catch (e, stackTrace) {
       _log.severe("Detailed error: $e");
       _log.severe("Stack trace: $stackTrace");
@@ -136,31 +142,35 @@ class DatabaseHelper {
   // เพิ่ม method สำหรับอัพเดทรูปโปรไฟล์
   Future<String?> updateProfileImage(String userId, File imageFile) async {
     try {
+      _log.info('Starting profile image update for user: $userId');
+
+      // 1. สร้างชื่อไฟล์จาก userId
       final fileExt = imageFile.path.split('.').last;
       final fileName = '$userId/profile.$fileExt';
-
-      // เปลี่ยนเป็นใช้ bytes แทน File
       final fileBytes = await imageFile.readAsBytes();
 
-      // อัพโหลดไฟล์ไปที่ storage
+      _log.info('Uploading image to storage: $fileName');
+
+      // 2. อัพโหลดไฟล์ไปที่ avatars bucket
       await client.storage.from('avatars').uploadBinary(
             fileName,
             fileBytes,
-            fileOptions:
-                const FileOptions(contentType: 'image/jpeg', upsert: true),
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true, // ทับไฟล์เดิมถ้ามีอยู่แล้ว
+            ),
           );
 
-      // รอสักครู่ให้ไฟล์อัพโหลดเสร็จ
-      await Future.delayed(const Duration(seconds: 1));
-
-      // สร้าง public URL
+      // 3. สร้าง public URL
       final imageUrl = client.storage.from('avatars').getPublicUrl(fileName);
+      _log.info('Generated public URL: $imageUrl');
 
-      // อัพเดท URL ในตาราง users
+      // 4. อัพเดท profile_image_url ในตาราง users
       await client.from('users').update({
         'profile_image_url': imageUrl,
       }).eq('id', userId);
 
+      _log.info('Profile image updated successfully');
       return imageUrl;
     } catch (e) {
       _log.severe('Error updating profile image: $e');
@@ -183,16 +193,51 @@ class DatabaseHelper {
   // เพิ่มโพสต์ใหม่
   Future<void> createPost({
     required String content,
-    List<String>? imageUrls, // เปลี่ยนจาก String? เป็น List<String>?
+    List<File>? images,
   }) async {
-    final user = client.auth.currentUser;
-    if (user == null) throw 'Not logged in';
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) throw 'Not logged in';
 
-    await client.from('posts').insert({
-      'user_id': user.id,
-      'content': content,
-      'image_urls': imageUrls, // เปลี่ยนชื่อ column ในฐานข้อมูลด้วย
-    });
+      List<String> imageUrls = [];
+
+      // 1. อัพโหลดรูปภาพ (ถ้ามี)
+      if (images != null && images.isNotEmpty) {
+        for (var image in images) {
+          final fileExt = image.path.split('.').last;
+          final fileName =
+              'post_${DateTime.now().millisecondsSinceEpoch}_${imageUrls.length}.$fileExt';
+
+          // อัพโหลดไฟล์
+          await client.storage.from('post-images').uploadBinary(
+                fileName,
+                await image.readAsBytes(),
+                fileOptions: const FileOptions(
+                  contentType: 'image/jpeg',
+                  upsert: true,
+                ),
+              );
+
+          // สร้าง public URL
+          final imageUrl =
+              client.storage.from('post-images').getPublicUrl(fileName);
+          imageUrls.add(imageUrl);
+        }
+      }
+
+      // 2. สร้างโพสต์พร้อมรูปภาพ
+      await client.from('posts').insert({
+        'user_id': user.id,
+        'content': content,
+        'image_urls': imageUrls,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      _log.info('Post created successfully with ${imageUrls.length} images');
+    } catch (e) {
+      _log.severe('Error creating post: $e');
+      throw 'Failed to create post: $e';
+    }
   }
 
   // แก้ไขฟังก์ชัน getPostsStream ใหม่

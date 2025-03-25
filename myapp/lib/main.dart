@@ -20,9 +20,9 @@ void main() async {
 
   // Initialize Supabase without authFlowType
   await Supabase.initialize(
-    url: 'https://nzsquekmnibttwcpobam.supabase.co',
+    url: 'https://rayksxmgvgyadekzbico.supabase.co',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56c3F1ZWttbmlidHR3Y3BvYmFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTY1MTcsImV4cCI6MjA1Nzk3MjUxN30.PjuhCdWjd_hT2ucRzegLOqlEXyziNb7REbQoVs0kkIo',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheWtzeG1ndmd5YWRla3piaWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTUwNzEsImV4cCI6MjA1Nzk3MTA3MX0.2sh0B02iM8-KR_CAvLYcoWnvLzVINrChgLXwKH1_yp0',
   );
 
   // ตั้งชื่อตัวแปรใหม่ไม่ขึ้นต้นด้วย underscore

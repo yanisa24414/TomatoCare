@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:myapp/screens/auth/login_screen.dart';
-
 import '../../db.dart'; // ใช้แค่อันนี้อันเดียว และลบ database_helper.dart ออก
 
 class RegisterScreen extends StatefulWidget {
