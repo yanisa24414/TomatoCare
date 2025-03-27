@@ -392,35 +392,48 @@ class DatabaseHelper {
 
   Future<Map<String, dynamic>> getDiseaseInfo(String diseaseName) async {
     try {
+      _log.info('Getting disease info for: $diseaseName');
+
+      if (diseaseName == 'Not a tomato leaf') {
+        return {
+          'name': diseaseName,
+          'description':
+              'The image appears to not be of a tomato leaf. Please ensure you are taking a photo of a tomato leaf and try again.',
+          'symptoms': '',
+          'treatment': '',
+          'prevention': '',
+        };
+      }
+
+      // ดึงข้อมูลจาก diseases table
       final response = await client
           .from('diseases')
           .select()
-          .eq('name', diseaseName)
-          .limit(1)
+          .eq('name', diseaseName) // ใช้ exact match
           .maybeSingle();
 
+      _log.info('Database response: $response');
+
       if (response == null) {
-        _log.fine('Disease not found in database: $diseaseName'); // Debug log
-        // ส่งค่าเริ่มต้นถ้าไม่พบข้อมูล
+        _log.warning('Disease not found in database: $diseaseName');
         return {
           'name': diseaseName,
-          'description': 'Disease information not available.',
-          'symptoms': 'No symptoms information available.',
-          'treatment': 'No treatment information available.',
-          'prevention': 'No prevention information available.',
+          'description': 'Could not find disease information in database.',
+          'symptoms': 'No information available',
+          'treatment': 'No information available',
+          'prevention': 'No information available',
         };
       }
 
       return response;
     } catch (e) {
       _log.severe('Error getting disease info: $e');
-      // ส่งค่าเริ่มต้นเมื่อเกิดข้อผิดพลาด
       return {
         'name': diseaseName,
         'description': 'Error loading disease information.',
-        'symptoms': 'Error loading symptoms.',
-        'treatment': 'Error loading treatment.',
-        'prevention': 'Error loading prevention.',
+        'symptoms': 'Error loading data',
+        'treatment': 'Error loading data',
+        'prevention': 'Error loading data',
       };
     }
   }

@@ -66,29 +66,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: DatabaseHelper.instance.getUserScans(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          print('Error in scans tab: ${snapshot.error}');
-          return const Center(
-            child: Text(
-              'Error loading scans',
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: 'Questrial',
-                color: Colors.grey,
-              ),
-            ),
-          );
-        }
-
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final scans = snapshot.data!;
-        if (scans.isEmpty) {
+        if (snapshot.data!.isEmpty) {
           return const Center(
             child: Text(
-              'No scans history yet',
+              'No scan history yet',
               style: TextStyle(
                 fontSize: 16,
                 fontFamily: 'Questrial',
@@ -99,25 +84,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
 
         return ListView.builder(
-          itemCount: scans.length,
+          itemCount: snapshot.data!.length,
           itemBuilder: (context, index) {
-            final scan = scans[index];
-            return ListTile(
-              leading: scan['image_url'] != null
-                  ? Image.network(
-                      scan['image_url'],
-                      width: 50,
-                      height: 50,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.image_not_supported),
-                    )
-                  : const Icon(Icons.image_not_supported),
-              title: Text(scan['disease_name'] ?? 'Unknown disease'),
-              subtitle: Text(timeago.format(DateTime.parse(
-                  scan['created_at'] ?? DateTime.now().toString()))),
-              trailing: Text(scan['confidence'] != null
-                  ? '${(scan['confidence'] * 100).toStringAsFixed(1)}%'
-                  : 'N/A'),
+            final scan = snapshot.data![index];
+            return Card(
+              margin: EdgeInsets.all(8),
+              child: ListTile(
+                leading: scan['image_url'] != null
+                    ? Image.network(
+                        scan['image_url'],
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      )
+                    : Icon(Icons.image_not_supported),
+                title: Text(scan['disease_name'] ?? 'Unknown'),
+                subtitle:
+                    Text(timeago.format(DateTime.parse(scan['created_at']))),
+                trailing: Text('${scan['confidence']}%'),
+              ),
             );
           },
         );

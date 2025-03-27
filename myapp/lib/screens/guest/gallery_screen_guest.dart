@@ -3,7 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
-import '../../services/ml_service.dart'; // เพิ่ม import
+import '../../services/ml_service.dart';
+import '../../db.dart'; // เพิ่ม import นี้
 
 class GalleryScreenGuest extends StatefulWidget {
   const GalleryScreenGuest({super.key});
@@ -35,22 +36,31 @@ class _GalleryScreenGuestState extends State<GalleryScreenGuest> {
               const Center(child: CircularProgressIndicator()),
         );
 
-        // ใช้ MLService แทน mock data
+        // 1. วิเคราะห์รูปด้วย ML model
         final results = await MLService.instance.processImage(_selectedImage!);
 
-        if (mounted) {
-          Navigator.pop(context); // Hide loading
+        // 2. ดึงโรคที่มีความน่าจะเป็นสูงสุด
+        final topDisease =
+            results.entries.reduce((a, b) => a.value > b.value ? a : b).key;
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AnalysisResultScreen(
-                imagePath: pickedFile.path,
-                predictions: results,
-              ),
+        // 3. ดึงข้อมูลโรคจาก Supabase
+        final diseaseInfo =
+            await DatabaseHelper.instance.getDiseaseInfo(topDisease);
+
+        if (!mounted) return;
+        Navigator.pop(context); // Hide loading
+
+        // 4. แสดงผลการวิเคราะห์พร้อมข้อมูลโรค
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnalysisResultScreen(
+              imagePath: pickedFile.path,
+              predictions: results,
+              diseaseInfo: diseaseInfo, // เพิ่ม diseaseInfo
             ),
-          );
-        }
+          ),
+        );
       }
     } catch (e) {
       print('Error: $e');

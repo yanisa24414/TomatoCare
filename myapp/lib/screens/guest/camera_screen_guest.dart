@@ -4,6 +4,7 @@ import 'dart:io'; // เพิ่ม import นี้
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
 import '../../services/ml_service.dart'; // เพิ่ม import
+import '../../db.dart'; // เพิ่ม import นี้
 
 class CameraScreenGuest extends StatefulWidget {
   const CameraScreenGuest({super.key});
@@ -56,25 +57,32 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
 
   Future<void> _analyzeCapturedImage(String imagePath) async {
     try {
-      // Show loading
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      // ใช้ MLService แทน mock data
+      // 1. วิเคราะห์รูปด้วย ML model
       final results = await MLService.instance.processImage(File(imagePath));
+
+      // 2. ดึงโรคที่มีความน่าจะเป็นสูงสุด
+      final topDisease =
+          results.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+
+      // 3. ดึงข้อมูลโรคจาก Supabase
+      final diseaseInfo =
+          await DatabaseHelper.instance.getDiseaseInfo(topDisease);
 
       if (mounted) {
         Navigator.pop(context); // Hide loading
-
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => AnalysisResultScreen(
               imagePath: imagePath,
               predictions: results,
+              diseaseInfo: diseaseInfo, // เพิ่ม diseaseInfo
             ),
           ),
         );
@@ -82,7 +90,7 @@ class _CameraScreenGuestState extends State<CameraScreenGuest> {
     } catch (e) {
       print('Error: $e');
       if (mounted) {
-        Navigator.pop(context); // Hide loading if showing
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error analyzing image: $e')),
         );

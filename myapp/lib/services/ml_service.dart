@@ -13,7 +13,8 @@ class MLService {
   Future<void> initialize() async {
     if (_isInitialized) return;
     try {
-      _interpreter = await Interpreter.fromAsset('assets/model.tflite');
+      _interpreter = await Interpreter.fromAsset(
+          'assets/my_model.tflite'); // เปลี่ยนชื่อโมเดล
       _isInitialized = true;
     } catch (e) {
       print('Error initializing model: $e');
@@ -24,105 +25,99 @@ class MLService {
   bool _isValidTomatoLeaf(img.Image image) {
     int greenPixels = 0;
     int totalPixels = image.width * image.height;
-    double avgGreen = 0, avgRed = 0, avgBlue = 0;
-    double variance = 0;
+    double avgGreen = 0;
+    double avgRed = 0;
+    double avgBlue = 0;
+    double avgBrightness = 0;
+    int brownGreenPixels = 0; // เพิ่มตัวแปรสำหรับนับพิกเซลสีน้ำตาล-เขียว
 
-    // คำนวณค่าเฉลี่ยสี
     for (int y = 0; y < image.height; y++) {
       for (int x = 0; x < image.width; x++) {
         final pixel = image.getPixel(x, y);
+
+        // คำนวณค่าเฉลี่ย
         avgRed += pixel.r;
         avgGreen += pixel.g;
         avgBlue += pixel.b;
-      }
-    }
+        avgBrightness += (pixel.r * 0.299 + pixel.g * 0.587 + pixel.b * 0.114);
 
-    avgRed /= totalPixels;
-    avgGreen /= totalPixels;
-    avgBlue /= totalPixels;
-
-    // คำนวณความแปรปรวนของสีเขียว
-    for (int y = 0; y < image.height; y++) {
-      for (int x = 0; x < image.width; x++) {
-        final pixel = image.getPixel(x, y);
-        variance += pow(pixel.g - avgGreen, 2);
-
-        // ปรับเกณฑ์การตรวจจับสีเขียว
-        if ((pixel.g > 60) && // ค่าสีเขียวขั้นต่ำ
-            (pixel.g > pixel.r * 1.1) && // สีเขียวต้องมากกว่าสีแดงชัดเจน
-            (pixel.g > pixel.b * 1.1) && // สีเขียวต้องมากกว่าสีน้ำเงินชัดเจน
-            (pixel.g - pixel.r > 20) && // ความต่างระหว่างสีเขียวกับสีแดง
-            (pixel.g - pixel.b > 20)) {
-          // ความต่างระหว่างสีเขียวกับสีน้ำเงิน
+        // ตรวจจับสีเขียวปกติ
+        if (pixel.g > 50 &&
+            pixel.g > pixel.r * 1.1 &&
+            pixel.g > pixel.b * 1.1) {
           greenPixels++;
+        }
+
+        // ตรวจจับสีน้ำตาล-เขียว (สำหรับใบที่เป็นโรค)
+        else if (pixel.g > 40 && // ลดเกณฑ์สีเขียว
+            pixel.r > 40 && // เพิ่มเกณฑ์สีแดง
+            pixel.g >= pixel.r * 0.7 && // ผ่อนปรนสัดส่วน
+            pixel.g >= pixel.b * 1.2) {
+          brownGreenPixels++;
         }
       }
     }
 
-    variance = sqrt(variance / totalPixels);
-    double greenRatio = greenPixels / totalPixels;
+    // คำนวณค่าเฉลี่ย
+    avgRed /= totalPixels;
+    avgGreen /= totalPixels;
+    avgBlue /= totalPixels;
+    avgBrightness /= totalPixels;
 
-    print('Image Analysis:');
-    print('Green Ratio: ${(greenRatio * 100).toStringAsFixed(2)}%');
+    // รวมจำนวนพิกเซลที่เป็นสีเขียวและสีน้ำตาล-เขียว
+    double totalValidPixels = (greenPixels + brownGreenPixels) / totalPixels;
+
+    print('Leaf Analysis:');
     print(
-        'Color Averages - R: ${avgRed.toStringAsFixed(2)}, G: ${avgGreen.toStringAsFixed(2)}, B: ${avgBlue.toStringAsFixed(2)}');
-    print('Green Variance: ${variance.toStringAsFixed(2)}');
+        'Green pixels: ${(greenPixels / totalPixels * 100).toStringAsFixed(2)}%');
+    print(
+        'Brown-green pixels: ${(brownGreenPixels / totalPixels * 100).toStringAsFixed(2)}%');
+    print(
+        'Total valid pixels: ${(totalValidPixels * 100).toStringAsFixed(2)}%');
+    print('Avg Brightness: ${avgBrightness.toStringAsFixed(2)}');
 
-    // เงื่อนไขการตรวจสอบใบมะเขือเทศ
-    bool isGreenDominant = avgGreen > avgRed * 1.2 && avgGreen > avgBlue * 1.2;
-    bool hasEnoughGreen =
-        greenRatio > 0.25; // ต้องมีพื้นที่สีเขียวอย่างน้อย 25%
-    bool hasGoodVariance = variance > 20; // ต้องมีความแปรปรวนของสีพอสมควร
-
-    return isGreenDominant && hasEnoughGreen && hasGoodVariance;
+    // เกณฑ์การตัดสินใจที่ปรับปรุงแล้ว
+    return totalValidPixels > 0.1 && // ลดเกณฑ์ขั้นต่ำ
+        avgBrightness > 30 && // ลดเกณฑ์ความสว่างขั้นต่ำ
+        avgBrightness < 230; // เพิ่มเกณฑ์ความสว่างสูงสุด
   }
 
   Future<Map<String, double>> processImage(File imageFile) async {
     if (!_isInitialized) await initialize();
-    print('=== Starting image processing ===');
-
-    // เก็บข้อมูลการ preprocessing เพื่อตรวจสอบ
-    Map<String, dynamic> preprocessingStats = {};
 
     try {
       final bytes = await imageFile.readAsBytes();
       final image = img.decodeImage(bytes);
       if (image == null) throw Exception('Could not decode image');
 
-      // ปรับแต่งภาพก่อนวิเคราะห์
-      final enhancedImage = img.adjustColor(
-        image,
-        brightness: 1.1, // เพิ่มความสว่างเล็กน้อย
-        contrast: 1.2, // เพิ่มความคมชัด
-        saturation: 1.3, // เพิ่มความอิ่มตัวของสี
-      );
+      print('Starting image analysis...');
 
-      // ตรวจสอบว่าเป็นใบมะเขือเทศหรือไม่
-      if (!_isValidTomatoLeaf(enhancedImage)) {
-        print('Image validation failed: Not a tomato leaf');
+      // ปรับปรุงขนาดภาพและคอนทราสต์
+      final processedImage = _preprocessImage(image);
+
+      // เปลี่ยนลำดับการทำงาน - วิเคราะห์โรคก่อนตรวจสอบใบ
+      var predictions = await _runInference(processedImage);
+      var maxPrediction =
+          predictions.entries.reduce((a, b) => a.value > b.value ? a : b);
+
+      // ถ้าพบโรคที่มีความน่าจะเป็นเพียงพอ (>20%) ให้คืนค่าเลย
+      if (maxPrediction.value >= 0.2) {
+        print('Found disease with confidence: ${maxPrediction.value}');
+        return predictions;
+      }
+
+      // ถ้าความน่าจะเป็นต่ำ ค่อยตรวจสอบว่าเป็นใบมะเขือเทศหรือไม่
+      if (!_isValidTomatoLeaf(processedImage)) {
+        print('Image rejected: Not a tomato leaf');
         return {'Not a tomato leaf': 1.0};
       }
 
-      // Crop และ resize ภาพ
-      final processedImage = _preprocessImage(enhancedImage);
-
-      // แก้ไขตรงนี้: เปลี่ยนจาก _prepareModelInput เป็น _imageToTensor
-      var input = _imageToTensor(processedImage);
-
-      // ประมวลผลด้วยโมเดล
-      var predictions = await _runInference(processedImage);
-      print('Raw predictions: $predictions');
-
-      // ตรวจสอบความน่าเชื่อถือของผลลัพธ์
-      if (!_isReliablePrediction(predictions)) {
-        print('Prediction reliability check failed');
-        return {'Uncertain result - Please retake photo': 1.0};
-      }
-
+      // ถ้าเป็นใบมะเขือเทศแต่ไม่แน่ใจเรื่องโรค ให้คืนค่าโรคที่มีความน่าจะเป็นสูงสุด
+      print('Image is tomato leaf with low confidence prediction');
       return predictions;
     } catch (e) {
       print('Error in processImage: $e');
-      rethrow;
+      return {'Error: Failed to analyze image': 1.0};
     }
   }
 
@@ -227,38 +222,33 @@ class MLService {
     var output =
         List.filled(outputShape[0] * outputShape[1], 0.0).reshape(outputShape);
 
-    // 4. เพิ่ม debug logs สำหรับ inference
     print('Running model inference...');
     _interpreter.run(input, output);
     final results = output[0] as List<double>;
     print('Raw model output: $results');
 
-    // 5. ปรับปรุงการคำนวณ softmax และการกรองผล
-    final predictions = _processPredictions(results);
-
-    return predictions;
+    return _processPredictions(results);
   }
 
   // 1. ฟังก์ชันสำหรับ preprocess ภาพ
   img.Image _preprocessImage(img.Image image) {
-    // ปรับความสว่างและคอนทราสต์
+    // ปรับค่าความสว่างและคอนทราสต์เพื่อให้เห็นใบชัดขึ้น
     final enhancedImage = img.adjustColor(
       image,
-      brightness: 1.2,
-      contrast: 1.3,
-      saturation: 1.2,
+      brightness: 1.1, // ลดลงจาก 1.2
+      contrast: 1.2, // ลดลงจาก 1.3
+      saturation: 1.1, // ลดลงจาก 1.2
     );
 
-    // Crop ภาพให้เหลือเฉพาะส่วนที่สำคัญ
+    // Crop ภาพให้เหลือเฉพาะส่วนที่สำคัญ แต่ขยายพื้นที่ให้มากขึ้น
     final croppedImage = img.copyCrop(
       enhancedImage,
-      x: enhancedImage.width ~/ 6,
-      y: enhancedImage.height ~/ 6,
-      width: enhancedImage.width * 2 ~/ 3,
-      height: enhancedImage.height * 2 ~/ 3,
+      x: enhancedImage.width ~/ 8, // เปลี่ยนจาก 6 เป็น 8
+      y: enhancedImage.height ~/ 8, // เปลี่ยนจาก 6 เป็น 8
+      width: (enhancedImage.width * 3) ~/ 4, // ขยายพื้นที่
+      height: (enhancedImage.height * 3) ~/ 4, // ขยายพื้นที่
     );
 
-    // Resize ให้ได้ขนาดที่ต้องการ
     return img.copyResize(
       croppedImage,
       width: 128,
@@ -300,27 +290,38 @@ class MLService {
 
   // 4. ฟังก์ชันประมวลผล predictions
   Map<String, double> _processPredictions(List<double> results) {
-    // Apply softmax
+    // ลดค่า temperature เพื่อให้การทำนายชัดเจนขึ้น
+    const temperature = 1.0; // ปรับจาก 1.5 เป็น 1.0
+
+    // ปรับค่า threshold ให้ต่ำลง
+    const threshold = 0.05; // ปรับจาก 0.15 เป็น 0.05
+
+    // คำนวณ softmax
     final maxVal = results.reduce((curr, next) => curr > next ? curr : next);
-    final exps = results.map((e) => exp(e - maxVal)).toList();
+    final exps = results.map((e) => exp(e / temperature)).toList();
     final sum = exps.reduce((a, b) => a + b);
     final softmax = exps.map((e) => e / sum).toList();
 
-    // Filter weak predictions
-    final threshold = 0.1; // 10% threshold
     final labels = [
-      'Late blight',
+      'Bacterial spot', // สลับตำแหน่งให้ตรงกับ output ของโมเดล
       'Early blight',
-      'Bacterial spot',
-      'healthy',
+      'Late blight',
       'Leaf Mold',
       'Septoria leaf spot',
       'Spider mites Two-spotted spider mites',
       'Target Spot',
+      'Tomato Yellow Leaf Curl Virus',
       'Tomato mosaic virus',
-      'Tomato Yellow Leaf Curl Virus'
+      'healthy'
     ];
 
+    // แสดง debug log สำหรับทุกค่าการทำนาย
+    print('\nRaw predictions with labels:');
+    for (var i = 0; i < labels.length; i++) {
+      print('${labels[i]}: ${(softmax[i] * 100).toStringAsFixed(2)}%');
+    }
+
+    // สร้าง predictions map
     Map<String, double> predictions = {};
     for (var i = 0; i < labels.length; i++) {
       if (softmax[i] >= threshold) {
@@ -328,12 +329,21 @@ class MLService {
       }
     }
 
-    print('\nFiltered predictions:');
-    predictions.forEach((key, value) {
+    // ถ้าไม่พบค่าที่เกินค่า threshold
+    if (predictions.isEmpty) {
+      return {'Uncertain': 1.0};
+    }
+
+    // เรียงลำดับตามค่าความน่าจะเป็น
+    var sortedPredictions = Map.fromEntries(predictions.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value)));
+
+    print('\nSorted predictions:');
+    sortedPredictions.forEach((key, value) {
       print('$key: ${(value * 100).toStringAsFixed(2)}%');
     });
 
-    return predictions;
+    return sortedPredictions;
   }
 
   double _calculateAverageBrightness(img.Image image) {

@@ -4,6 +4,9 @@ import 'dart:io';
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
 import '../../services/ml_service.dart';
+import '../../db.dart'; // เพิ่ม import นี้
+import 'package:supabase_flutter/supabase_flutter.dart'; // เพิ่ม import
+import 'package:path_provider/path_provider.dart'; // เพิ่ม import นี้
 
 class GalleryScreenMember extends StatefulWidget {
   const GalleryScreenMember({super.key});
@@ -18,16 +21,12 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
   Future<void> _pickImage() async {
     try {
       final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxHeight: 1200,
-        maxWidth: 1200,
-      );
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile != null) {
         setState(() => _selectedImage = File(pickedFile.path));
 
-        // Show loading
+        // แสดง loading
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -35,34 +34,69 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
               const Center(child: CircularProgressIndicator()),
         );
 
-        // Process image
+        // วิเคราะห์รูป
         final results = await MLService.instance.processImage(_selectedImage!);
 
-        // Debug log
-        print('ML Results: $results');
+        // ดึงโรคที่มีความน่าจะเป็นสูงสุด
+        final topDisease =
+            results.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+
+        // ดึงข้อมูลโรคจาก Supabase
+        final diseaseInfo =
+            await DatabaseHelper.instance.getDiseaseInfo(topDisease);
+
+        // อัพโหลดรูปไปยัง storage
+        final fileName = 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+        // แปลง bytes เป็น File ก่อนอัพโหลด
+        final bytes = await _selectedImage!.readAsBytes();
+
+        // สร้าง temp directory และ temp file
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = await File('${tempDir.path}/$fileName').create();
+        await tempFile.writeAsBytes(bytes);
+
+        await DatabaseHelper.instance.client.storage.from('scan-images').upload(
+              fileName,
+              tempFile, // ส่ง File แทน bytes
+            );
+
+        final imageUrl = DatabaseHelper.instance.client.storage
+            .from('scan-images')
+            .getPublicUrl(fileName);
 
         if (mounted) {
-          Navigator.pop(context); // Hide loading
+          Navigator.pop(context); // ปิด loading
 
-          if (results.isNotEmpty) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AnalysisResultScreen(
-                  imagePath: pickedFile.path,
-                  predictions: results,
-                ),
+          // แสดงผลการวิเคราะห์
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AnalysisResultScreen(
+                imagePath: pickedFile.path,
+                predictions: results,
+                diseaseInfo: diseaseInfo,
               ),
-            );
-          } else {
-            throw Exception('No predictions returned from ML model');
+            ),
+          );
+
+          // บันทึกประวัติ
+          final user = DatabaseHelper.instance.client.auth.currentUser;
+          if (user != null) {
+            await DatabaseHelper.instance.client.from('scan_history').insert({
+              'user_id': user.id,
+              'image_url': imageUrl,
+              'disease_name': topDisease,
+              'confidence':
+                  ((results[topDisease]! * 100).round()), // เปลี่ยนเป็น round()
+              'created_at': DateTime.now().toIso8601String(),
+            });
           }
         }
       }
     } catch (e) {
-      print('Error: $e');
       if (mounted) {
-        Navigator.pop(context); // Hide loading if showing
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error analyzing image: $e')),
         );
@@ -88,7 +122,7 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.2),
+                    color: Colors.grey.withAlpha((255 * 0.2).toInt()),
                     blurRadius: 10,
                     spreadRadius: 2,
                   ),
