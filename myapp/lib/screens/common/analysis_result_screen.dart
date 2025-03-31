@@ -17,115 +17,183 @@ class AnalysisResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ตรวจสอบข้อมูลโรค
     final bool hasValidDiseaseInfo = diseaseInfo != null &&
         diseaseInfo!['name'] != null &&
         diseaseInfo!['name'] != 'Unknown';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analysis Result'),
+        title: const Text(
+          'Analysis Result',
+          style: TextStyle(fontFamily: 'Questrial', color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF7D2424),
+        elevation: 0,
       ),
+      backgroundColor: const Color(0xFFFDF6E3),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // แสดงรูปที่วิเคราะห์
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(File(imagePath)),
-            ),
-            const SizedBox(height: 24),
-
-            // แสดงชื่อโรคและความน่าจะเป็น
-            Text(
-              'Disease: ${hasValidDiseaseInfo ? diseaseInfo!['name'] : 'Analysis not available'}',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color:
-                    hasValidDiseaseInfo ? const Color(0xFF7D2424) : Colors.red,
+            // โซนรูปภาพ
+            Container(
+              height: 300,
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.file(
+                  File(imagePath),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
 
-            // แสดงรายละเอียดโรค
-            _buildSection('Description', diseaseInfo?['description']),
-            _buildSection('Symptoms', diseaseInfo?['symptoms']),
-            _buildSection('Treatment', diseaseInfo?['treatment']),
-            _buildSection('Prevention', diseaseInfo?['prevention']),
+            // โซนผลการวิเคราะห์
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ชื่อโรค
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF7D2424).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            hasValidDiseaseInfo
+                                ? Icons.local_hospital
+                                : Icons.warning,
+                            color: const Color(0xFF7D2424),
+                            size: 30,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Diagnosis',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                  fontFamily: 'Questrial',
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                hasValidDiseaseInfo
+                                    ? diseaseInfo!['name']
+                                    : 'Analysis not available',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF7D2424),
+                                  fontFamily: 'Questrial',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
 
-            // แสดงความน่าจะเป็นของแต่ละโรค
-            const SizedBox(height: 16),
-            const Text(
-              'Confidence Levels:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                    const SizedBox(height: 24),
+
+                    // รายละเอียดโรค
+                    _buildDetailSection(
+                      title: 'Description',
+                      content: diseaseInfo?['description'],
+                      icon: Icons.description,
+                    ),
+                    _buildDetailSection(
+                      title: 'Symptoms',
+                      content: diseaseInfo?['symptoms'],
+                      icon: Icons.sick,
+                    ),
+                    _buildDetailSection(
+                      title: 'Treatment',
+                      content: diseaseInfo?['treatment'],
+                      icon: Icons.medical_services,
+                    ),
+                    _buildDetailSection(
+                      title: 'Prevention',
+                      content: diseaseInfo?['prevention'],
+                      icon: Icons.health_and_safety,
+                    ),
+                  ],
+                ),
               ),
             ),
-            ...predictions.entries
-                .where((e) => e.value > 0.1)
-                .map((e) => _buildProbabilityBar(e.key, e.value)),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSection(String title, String? content) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Questrial',
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            content ?? 'N/A',
-            style: const TextStyle(
-              fontSize: 16,
-              fontFamily: 'Questrial',
-            ),
-          ),
-        ],
+  Widget _buildDetailSection({
+    required String title,
+    required String? content,
+    required IconData icon,
+  }) {
+    if (content == null || content.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
-  }
-
-  Widget _buildProbabilityBar(String label, double probability) {
-    // แสดงเฉพาะโรคที่มีความน่าจะเป็นมากกว่า 10%
-    if (probability < 0.1) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ExpansionTile(
+        leading: Icon(icon, color: const Color(0xFF7D2424)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF7D2424),
+            fontFamily: 'Questrial',
+          ),
+        ),
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontFamily: 'Questrial'),
-          ),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: probability,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              probability > 0.5 ? const Color(0xFF7D2424) : Colors.grey,
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              content,
+              style: const TextStyle(
+                fontSize: 16,
+                height: 1.5,
+                fontFamily: 'Questrial',
+              ),
             ),
-          ),
-          Text(
-            '${(probability * 100).toStringAsFixed(1)}%',
-            style: const TextStyle(fontFamily: 'Questrial'),
           ),
         ],
       ),

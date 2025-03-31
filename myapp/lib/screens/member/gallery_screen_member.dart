@@ -29,7 +29,7 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
       if (pickedFile != null) {
         setState(() => _selectedImage = File(pickedFile.path));
 
-        // Show loading
+        // Show loading dialog
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -40,14 +40,40 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
         // 1. วิเคราะห์รูปด้วยโมเดล
         final predictions =
             await DatabaseHelper.instance.analyzeImage(File(pickedFile.path));
-
-        // 2. หาโรคที่มีความน่าจะเป็นสูงสุด
         final topDisease =
             predictions.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-
-        // 3. ดึงข้อมูลโรคจาก Supabase diseases table
         final diseaseInfo =
             await DatabaseHelper.instance.getDiseaseInfo(topDisease);
+
+        // 2. บันทึกประวัติการสแกนสำหรับ member
+        final user = DatabaseHelper.instance.client.auth.currentUser;
+        if (user != null) {
+          final fileName = 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final bytes = await File(pickedFile.path).readAsBytes();
+
+          // อัปโหลดรูปไปยัง storage
+          await DatabaseHelper.instance.client.storage
+              .from('scan-images')
+              .uploadBinary(
+                fileName,
+                bytes,
+                fileOptions: const FileOptions(contentType: 'image/jpeg'),
+              );
+
+          // สร้าง public URL
+          final imageUrl = DatabaseHelper.instance.client.storage
+              .from('scan-images')
+              .getPublicUrl(fileName);
+
+          // บันทึกข้อมูลลงใน scan_history
+          await DatabaseHelper.instance.client.from('scan_history').insert({
+            'user_id': user.id,
+            'image_url': imageUrl,
+            'disease_name': topDisease,
+            'confidence': ((predictions[topDisease]! * 100).round()),
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        }
 
         if (!mounted) return;
         Navigator.pop(context); // Hide loading

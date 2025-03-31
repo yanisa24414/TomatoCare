@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'dart:io'; // เพิ่ม import นี้
+import 'dart:io';
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
-import '../../services/ml_service.dart'; // เพิ่ม import นี้
-import '../../db.dart'; // เพิ่ม import นี้
-import 'package:path_provider/path_provider.dart'; // เพิ่ม import นี้
+import '../../db.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // เพิ่ม import นี้
 
 class CameraScreenMember extends StatefulWidget {
   const CameraScreenMember({super.key});
@@ -63,47 +62,49 @@ class _CameraScreenMemberState extends State<CameraScreenMember> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      // 1. วิเคราะห์รูปด้วย ML model
-      final results = await MLService.instance.processImage(File(imagePath));
+      // 1. วิเคราะห์รูปด้วยโมเดล
+      final predictions =
+          await DatabaseHelper.instance.analyzeImage(File(imagePath));
       final topDisease =
-          results.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-
-      // 2. ดึงข้อมูลโรคจาก Supabase
+          predictions.entries.reduce((a, b) => a.value > b.value ? a : b).key;
       final diseaseInfo =
           await DatabaseHelper.instance.getDiseaseInfo(topDisease);
 
-      // 3. อัพโหลดรูปและบันทึกประวัติ (เฉพาะ member)
+      // 2. บันทึกประวัติการสแกนสำหรับ member
       final user = DatabaseHelper.instance.client.auth.currentUser;
       if (user != null) {
         final fileName = 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final bytes = await File(imagePath).readAsBytes();
 
-        // สร้าง temp directory และ temp file
-        final tempDir = await getTemporaryDirectory();
-        final tempFile = await File('${tempDir.path}/$fileName').create();
-        await tempFile.writeAsBytes(bytes);
-
-        await DatabaseHelper.instance.client.storage.from('scan-images').upload(
+        // อัปโหลดรูปไปยัง storage โดยใช้ fileOptions
+        await DatabaseHelper.instance.client.storage
+            .from('scan-images')
+            .uploadBinary(
               fileName,
-              tempFile,
+              bytes,
+              fileOptions: const FileOptions(
+                // เปลี่ยนจาก options เป็น fileOptions
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
             );
 
+        // สร้าง public URL
         final imageUrl = DatabaseHelper.instance.client.storage
             .from('scan-images')
             .getPublicUrl(fileName);
 
-        // บันทึกประวัติการสแกน
+        // บันทึกข้อมูลลงใน scan_history
         await DatabaseHelper.instance.client.from('scan_history').insert({
           'user_id': user.id,
           'image_url': imageUrl,
           'disease_name': topDisease,
-          'confidence':
-              ((results[topDisease]! * 100).round()), // เปลี่ยนเป็น round()
+          'confidence': ((predictions[topDisease]! * 100).round()),
           'created_at': DateTime.now().toIso8601String(),
         });
       }
 
-      // 4. แสดงผลการวิเคราะห์
+      // 3. แสดงผลการวิเคราะห์
       if (mounted) {
         Navigator.pop(context);
         Navigator.push(
@@ -111,7 +112,7 @@ class _CameraScreenMemberState extends State<CameraScreenMember> {
           MaterialPageRoute(
             builder: (context) => AnalysisResultScreen(
               imagePath: imagePath,
-              predictions: results,
+              predictions: predictions,
               diseaseInfo: diseaseInfo,
             ),
           ),

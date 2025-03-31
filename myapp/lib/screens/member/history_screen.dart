@@ -101,7 +101,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 title: Text(scan['disease_name'] ?? 'Unknown'),
                 subtitle:
                     Text(timeago.format(DateTime.parse(scan['created_at']))),
-                trailing: Text('${scan['confidence']}%'),
               ),
             );
           },
