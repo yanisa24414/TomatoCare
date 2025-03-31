@@ -3,7 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
-import '../../services/ml_service.dart';
 import '../../db.dart'; // เพิ่ม import นี้
 import 'package:supabase_flutter/supabase_flutter.dart'; // เพิ่ม import
 import 'package:path_provider/path_provider.dart'; // เพิ่ม import นี้
@@ -21,12 +20,16 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
   Future<void> _pickImage() async {
     try {
       final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxHeight: 1200,
+        maxWidth: 1200,
+      );
 
       if (pickedFile != null) {
         setState(() => _selectedImage = File(pickedFile.path));
 
-        // แสดง loading
+        // Show loading
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -34,65 +37,32 @@ class _GalleryScreenMemberState extends State<GalleryScreenMember> {
               const Center(child: CircularProgressIndicator()),
         );
 
-        // วิเคราะห์รูป
-        final results = await MLService.instance.processImage(_selectedImage!);
+        // 1. วิเคราะห์รูปด้วยโมเดล
+        final predictions =
+            await DatabaseHelper.instance.analyzeImage(File(pickedFile.path));
 
-        // ดึงโรคที่มีความน่าจะเป็นสูงสุด
+        // 2. หาโรคที่มีความน่าจะเป็นสูงสุด
         final topDisease =
-            results.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+            predictions.entries.reduce((a, b) => a.value > b.value ? a : b).key;
 
-        // ดึงข้อมูลโรคจาก Supabase
+        // 3. ดึงข้อมูลโรคจาก Supabase diseases table
         final diseaseInfo =
             await DatabaseHelper.instance.getDiseaseInfo(topDisease);
 
-        // อัพโหลดรูปไปยัง storage
-        final fileName = 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        if (!mounted) return;
+        Navigator.pop(context); // Hide loading
 
-        // แปลง bytes เป็น File ก่อนอัพโหลด
-        final bytes = await _selectedImage!.readAsBytes();
-
-        // สร้าง temp directory และ temp file
-        final tempDir = await getTemporaryDirectory();
-        final tempFile = await File('${tempDir.path}/$fileName').create();
-        await tempFile.writeAsBytes(bytes);
-
-        await DatabaseHelper.instance.client.storage.from('scan-images').upload(
-              fileName,
-              tempFile, // ส่ง File แทน bytes
-            );
-
-        final imageUrl = DatabaseHelper.instance.client.storage
-            .from('scan-images')
-            .getPublicUrl(fileName);
-
-        if (mounted) {
-          Navigator.pop(context); // ปิด loading
-
-          // แสดงผลการวิเคราะห์
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AnalysisResultScreen(
-                imagePath: pickedFile.path,
-                predictions: results,
-                diseaseInfo: diseaseInfo,
-              ),
+        // 4. แสดงผลการวิเคราะห์พร้อมข้อมูลโรค
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AnalysisResultScreen(
+              imagePath: pickedFile.path,
+              predictions: predictions,
+              diseaseInfo: diseaseInfo,
             ),
-          );
-
-          // บันทึกประวัติ
-          final user = DatabaseHelper.instance.client.auth.currentUser;
-          if (user != null) {
-            await DatabaseHelper.instance.client.from('scan_history').insert({
-              'user_id': user.id,
-              'image_url': imageUrl,
-              'disease_name': topDisease,
-              'confidence':
-                  ((results[topDisease]! * 100).round()), // เปลี่ยนเป็น round()
-              'created_at': DateTime.now().toIso8601String(),
-            });
-          }
-        }
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

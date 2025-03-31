@@ -3,7 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../widgets/app_bar.dart';
 import '../common/analysis_result_screen.dart';
-import '../../services/ml_service.dart';
 import '../../db.dart'; // เพิ่ม import นี้
 
 class GalleryScreenGuest extends StatefulWidget {
@@ -36,14 +35,15 @@ class _GalleryScreenGuestState extends State<GalleryScreenGuest> {
               const Center(child: CircularProgressIndicator()),
         );
 
-        // 1. วิเคราะห์รูปด้วย ML model
-        final results = await MLService.instance.processImage(_selectedImage!);
+        // 1. วิเคราะห์รูปด้วยโมเดล
+        final predictions =
+            await DatabaseHelper.instance.analyzeImage(File(pickedFile.path));
 
-        // 2. ดึงโรคที่มีความน่าจะเป็นสูงสุด
+        // 2. หาโรคที่มีความน่าจะเป็นสูงสุด
         final topDisease =
-            results.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+            predictions.entries.reduce((a, b) => a.value > b.value ? a : b).key;
 
-        // 3. ดึงข้อมูลโรคจาก Supabase
+        // 3. ดึงข้อมูลโรคจาก Supabase diseases table
         final diseaseInfo =
             await DatabaseHelper.instance.getDiseaseInfo(topDisease);
 
@@ -56,16 +56,15 @@ class _GalleryScreenGuestState extends State<GalleryScreenGuest> {
           MaterialPageRoute(
             builder: (context) => AnalysisResultScreen(
               imagePath: pickedFile.path,
-              predictions: results,
-              diseaseInfo: diseaseInfo, // เพิ่ม diseaseInfo
+              predictions: predictions,
+              diseaseInfo: diseaseInfo,
             ),
           ),
         );
       }
     } catch (e) {
-      print('Error: $e');
       if (mounted) {
-        Navigator.pop(context); // Hide loading if showing
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error analyzing image: $e')),
         );
@@ -91,7 +90,7 @@ class _GalleryScreenGuestState extends State<GalleryScreenGuest> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.2),
+                    color: Colors.grey.withOpacity(0.2),
                     blurRadius: 10,
                     spreadRadius: 2,
                   ),

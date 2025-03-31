@@ -14,7 +14,7 @@ class MLService {
     if (_isInitialized) return;
     try {
       _interpreter = await Interpreter.fromAsset(
-          'assets/my_model.tflite'); // เปลี่ยนชื่อโมเดล
+          'assets/keras_tomato_model3.tflite'); // เปลี่ยนชื่อโมเดล
       _isInitialized = true;
     } catch (e) {
       print('Error initializing model: $e');
@@ -22,98 +22,45 @@ class MLService {
     }
   }
 
-  bool _isValidTomatoLeaf(img.Image image) {
-    int greenPixels = 0;
-    int totalPixels = image.width * image.height;
-    double avgGreen = 0;
-    double avgRed = 0;
-    double avgBlue = 0;
-    double avgBrightness = 0;
-    int brownGreenPixels = 0; // เพิ่มตัวแปรสำหรับนับพิกเซลสีน้ำตาล-เขียว
-
-    for (int y = 0; y < image.height; y++) {
-      for (int x = 0; x < image.width; x++) {
-        final pixel = image.getPixel(x, y);
-
-        // คำนวณค่าเฉลี่ย
-        avgRed += pixel.r;
-        avgGreen += pixel.g;
-        avgBlue += pixel.b;
-        avgBrightness += (pixel.r * 0.299 + pixel.g * 0.587 + pixel.b * 0.114);
-
-        // ตรวจจับสีเขียวปกติ
-        if (pixel.g > 50 &&
-            pixel.g > pixel.r * 1.1 &&
-            pixel.g > pixel.b * 1.1) {
-          greenPixels++;
-        }
-
-        // ตรวจจับสีน้ำตาล-เขียว (สำหรับใบที่เป็นโรค)
-        else if (pixel.g > 40 && // ลดเกณฑ์สีเขียว
-            pixel.r > 40 && // เพิ่มเกณฑ์สีแดง
-            pixel.g >= pixel.r * 0.7 && // ผ่อนปรนสัดส่วน
-            pixel.g >= pixel.b * 1.2) {
-          brownGreenPixels++;
-        }
-      }
-    }
-
-    // คำนวณค่าเฉลี่ย
-    avgRed /= totalPixels;
-    avgGreen /= totalPixels;
-    avgBlue /= totalPixels;
-    avgBrightness /= totalPixels;
-
-    // รวมจำนวนพิกเซลที่เป็นสีเขียวและสีน้ำตาล-เขียว
-    double totalValidPixels = (greenPixels + brownGreenPixels) / totalPixels;
-
-    print('Leaf Analysis:');
-    print(
-        'Green pixels: ${(greenPixels / totalPixels * 100).toStringAsFixed(2)}%');
-    print(
-        'Brown-green pixels: ${(brownGreenPixels / totalPixels * 100).toStringAsFixed(2)}%');
-    print(
-        'Total valid pixels: ${(totalValidPixels * 100).toStringAsFixed(2)}%');
-    print('Avg Brightness: ${avgBrightness.toStringAsFixed(2)}');
-
-    // เกณฑ์การตัดสินใจที่ปรับปรุงแล้ว
-    return totalValidPixels > 0.1 && // ลดเกณฑ์ขั้นต่ำ
-        avgBrightness > 30 && // ลดเกณฑ์ความสว่างขั้นต่ำ
-        avgBrightness < 230; // เพิ่มเกณฑ์ความสว่างสูงสุด
-  }
-
   Future<Map<String, double>> processImage(File imageFile) async {
-    if (!_isInitialized) await initialize();
-
     try {
+      print('Starting image analysis...');
+
       final bytes = await imageFile.readAsBytes();
       final image = img.decodeImage(bytes);
       if (image == null) throw Exception('Could not decode image');
 
-      print('Starting image analysis...');
-
-      // ปรับปรุงขนาดภาพและคอนทราสต์
-      final processedImage = _preprocessImage(image);
-
-      // เปลี่ยนลำดับการทำงาน - วิเคราะห์โรคก่อนตรวจสอบใบ
-      var predictions = await _runInference(processedImage);
-      var maxPrediction =
-          predictions.entries.reduce((a, b) => a.value > b.value ? a : b);
-
-      // ถ้าพบโรคที่มีความน่าจะเป็นเพียงพอ (>20%) ให้คืนค่าเลย
-      if (maxPrediction.value >= 0.2) {
-        print('Found disease with confidence: ${maxPrediction.value}');
-        return predictions;
-      }
-
-      // ถ้าความน่าจะเป็นต่ำ ค่อยตรวจสอบว่าเป็นใบมะเขือเทศหรือไม่
-      if (!_isValidTomatoLeaf(processedImage)) {
-        print('Image rejected: Not a tomato leaf');
+      // เพิ่มการตรวจสอบคุณภาพรูปภาพ
+      Map<String, dynamic> stats = {};
+      if (!_isQualityImage(image, stats)) {
+        print('Image quality check failed:');
+        print('Green ratio: ${stats['greenRatio']}');
+        print('Brightness: ${stats['avgBrightness']}');
         return {'Not a tomato leaf': 1.0};
       }
 
-      // ถ้าเป็นใบมะเขือเทศแต่ไม่แน่ใจเรื่องโรค ให้คืนค่าโรคที่มีความน่าจะเป็นสูงสุด
-      print('Image is tomato leaf with low confidence prediction');
+      // ปรับปรุงการ preprocess
+      final processedImage = _preprocessImage(image);
+      print('Image preprocessed successfully');
+
+      // ปรับปรุงการแปลงเป็น tensor
+      var input = _imageToTensor(processedImage);
+      print('Converted to tensor format');
+
+      // ทำนายผลด้วยโมเดล
+      final outputShape = [1, 10];
+      var output =
+          List.filled(outputShape[0] * outputShape[1], 0).reshape(outputShape);
+      _interpreter.run(input, output);
+
+      // แปลงผลลัพธ์และตรวจสอบความน่าเชื่อถือ
+      var predictions = _processPredictions(output[0] as List<double>);
+      if (!_isReliablePrediction(predictions)) {
+        print('Prediction reliability check failed');
+        return {'Not a tomato leaf': 1.0};
+      }
+
+      print('Analysis completed successfully');
       return predictions;
     } catch (e) {
       print('Error in processImage: $e');
@@ -121,28 +68,83 @@ class MLService {
     }
   }
 
+  bool _isValidTomatoLeaf(img.Image image) {
+    int greenPixels = 0;
+    int totalPixels = image.width * image.height;
+    double avgGreen = 0, avgRed = 0, avgBlue = 0;
+    double totalEdges = 0;
+
+    // วิเคราะห์สีและขอบใบ
+    for (int y = 1; y < image.height - 1; y++) {
+      for (int x = 1; x < image.width - 1; x++) {
+        final pixel = image.getPixel(x, y);
+
+        // คำนวณค่าสีเฉลี่ย
+        avgRed += pixel.r;
+        avgGreen += pixel.g;
+        avgBlue += pixel.b;
+
+        // ตรวจจับสีเขียวของใบ
+        if (pixel.g > 60 &&
+            pixel.g > pixel.r * 1.3 &&
+            pixel.g > pixel.b * 1.3) {
+          greenPixels++;
+        }
+
+        // ตรวจจับขอบใบ
+        final dx = image.getPixel(x + 1, y).g - image.getPixel(x - 1, y).g;
+        final dy = image.getPixel(x, y + 1).g - image.getPixel(x, y - 1).g;
+        final gradient = sqrt(dx * dx + dy * dy);
+        if (gradient > 30) {
+          // ปรับค่าตามความเหมาะสม
+          totalEdges++;
+        }
+      }
+    }
+
+    // คำนวณค่าเฉลี่ยและอัตราส่วน
+    avgRed /= totalPixels;
+    avgGreen /= totalPixels;
+    avgBlue /= totalPixels;
+
+    double greenRatio = greenPixels / totalPixels;
+    double edgeRatio = totalEdges / totalPixels;
+
+    print('Leaf Analysis:');
+    print('Green ratio: ${(greenRatio * 100).toStringAsFixed(2)}%');
+    print('Edge ratio: ${(edgeRatio * 100).toStringAsFixed(2)}%');
+    print(
+        'Avg RGB: R=${avgRed.toStringAsFixed(2)}, G=${avgGreen.toStringAsFixed(2)}, B=${avgBlue.toStringAsFixed(2)}');
+
+    // เกณฑ์ตรวจสอบที่เข้มงวดขึ้น
+    return greenRatio > 0.25 && // ต้องมีพื้นที่สีเขียวมากกว่า 25%
+        edgeRatio > 0.01 && // ต้องมีขอบใบชัดเจน
+        avgGreen > avgRed * 1.3 && // สีเขียวต้องเด่นชัด
+        avgGreen > avgBlue * 1.3;
+  }
+
   bool _isQualityImage(img.Image image, Map<String, dynamic> stats) {
     int greenPixels = 0;
     double avgBrightness = 0;
-    double avgGreen = 0;
-    double avgRed = 0;
-    double avgBlue = 0;
+    double avgGreen = 0, avgRed = 0, avgBlue = 0;
     int totalPixels = image.width * image.height;
 
+    // วิเคราะห์แต่ละพิกเซล
     for (int y = 0; y < image.height; y++) {
       for (int x = 0; x < image.width; x++) {
         final pixel = image.getPixel(x, y);
 
-        // คำนวณค่าเฉลี่ยสี
+        // คำนวณค่าสีเฉลี่ย
         avgRed += pixel.r;
         avgGreen += pixel.g;
         avgBlue += pixel.b;
         avgBrightness += (pixel.r * 0.299 + pixel.g * 0.587 + pixel.b * 0.114);
 
-        // ปรับเกณฑ์การตรวจจับสีเขียว
-        if ((pixel.g > 50) && // ลดเกณฑ์ขั้นต่ำ
-            (pixel.g > pixel.r * 0.9) && // ปรับสัดส่วนให้ยืดหยุ่นขึ้น
-            (pixel.g > pixel.b * 0.9)) {
+        // ปรับเกณฑ์การตรวจจับสีเขียวให้ยืดหยุ่นขึ้น
+        if (pixel.g > 60 && // ลดค่าขั้นต่ำของสีเขียว
+            pixel.g > pixel.r * 0.9 && // ลดสัดส่วนระหว่างสีเขียวกับสีแดง
+            pixel.g > pixel.b * 0.9) {
+          // ลดสัดส่วนระหว่างสีเขียวกับสีน้ำเงิน
           greenPixels++;
         }
       }
@@ -154,27 +156,19 @@ class MLService {
     avgBlue /= totalPixels;
     avgBrightness /= totalPixels;
 
-    // เก็บค่าสถิติ
     double greenRatio = greenPixels / totalPixels;
+
+    // เก็บค่าสถิติ
     stats['greenRatio'] = greenRatio;
     stats['avgBrightness'] = avgBrightness;
     stats['avgGreen'] = avgGreen;
     stats['avgRed'] = avgRed;
     stats['avgBlue'] = avgBlue;
 
-    // แสดง debug logs
-    print('Image statistics:');
-    print('Green ratio: ${(greenRatio * 100).toStringAsFixed(2)}%');
-    print('Average brightness: ${avgBrightness.toStringAsFixed(2)}');
-    print(
-        'Average RGB: R=${avgRed.toStringAsFixed(2)}, G=${avgGreen.toStringAsFixed(2)}, B=${avgBlue.toStringAsFixed(2)}');
-
-    // ปรับเกณฑ์การตัดสินใจ
-    bool isGreenDominant = avgGreen > avgRed * 0.9 && avgGreen > avgBlue * 0.9;
-    bool hasEnoughGreen = greenRatio > 0.05; // ลดเกณฑ์ลงเหลือ 5%
-    bool hasSuitableBrightness = avgBrightness > 30 && avgBrightness < 240;
-
-    return isGreenDominant && hasEnoughGreen && hasSuitableBrightness;
+    // ปรับเกณฑ์การตัดสินใจให้ยืดหยุ่นขึ้น
+    return greenRatio > 0.15 && // ลดเกณฑ์พื้นที่สีเขียวเหลือ 15%
+        avgBrightness > 30 && // ลดค่าความสว่างขั้นต่ำ
+        avgBrightness < 220; // เพิ่มค่าความสว่างสูงสุด
   }
 
   bool _isReliablePrediction(Map<String, double> predictions) {
@@ -290,55 +284,45 @@ class MLService {
 
   // 4. ฟังก์ชันประมวลผล predictions
   Map<String, double> _processPredictions(List<double> results) {
-    // ลดค่า temperature เพื่อให้การทำนายชัดเจนขึ้น
-    const temperature = 1.0; // ปรับจาก 1.5 เป็น 1.0
-
-    // ปรับค่า threshold ให้ต่ำลง
-    const threshold = 0.05; // ปรับจาก 0.15 เป็น 0.05
+    final labels = [
+      'Early blight', // [0]
+      'Late blight', // [1]
+      'Bacterial spot', // [2]
+      'healthy', // [3]
+      'Leaf Mold', // [4]
+      'Septoria leaf spot', // [5]
+      'Spider mites', // [6]
+      'Target Spot', // [7]
+      'Tomato mosaic virus', // [8]
+      'Tomato Yellow Leaf Curl Virus' // [9]
+    ];
 
     // คำนวณ softmax
     final maxVal = results.reduce((curr, next) => curr > next ? curr : next);
-    final exps = results.map((e) => exp(e / temperature)).toList();
+    final exps = results.map((e) => exp(e - maxVal)).toList();
     final sum = exps.reduce((a, b) => a + b);
     final softmax = exps.map((e) => e / sum).toList();
 
-    final labels = [
-      'Bacterial spot', // สลับตำแหน่งให้ตรงกับ output ของโมเดล
-      'Early blight',
-      'Late blight',
-      'Leaf Mold',
-      'Septoria leaf spot',
-      'Spider mites Two-spotted spider mites',
-      'Target Spot',
-      'Tomato Yellow Leaf Curl Virus',
-      'Tomato mosaic virus',
-      'healthy'
-    ];
-
-    // แสดง debug log สำหรับทุกค่าการทำนาย
-    print('\nRaw predictions with labels:');
-    for (var i = 0; i < labels.length; i++) {
-      print('${labels[i]}: ${(softmax[i] * 100).toStringAsFixed(2)}%');
-    }
-
-    // สร้าง predictions map
+    // สร้าง predictions map ใส่ทุกค่าที่มากกว่า 5%
     Map<String, double> predictions = {};
     for (var i = 0; i < labels.length; i++) {
-      if (softmax[i] >= threshold) {
+      if (softmax[i] >= 0.05) {
+        // ลดเกณฑ์เหลือ 5%
         predictions[labels[i]] = softmax[i];
       }
     }
 
-    // ถ้าไม่พบค่าที่เกินค่า threshold
+    // ถ้าไม่มีค่าใดเกิน 5% ให้ใส่ค่าที่มากที่สุด
     if (predictions.isEmpty) {
-      return {'Uncertain': 1.0};
+      var maxIndex = softmax.indexOf(softmax.reduce((a, b) => a > b ? a : b));
+      predictions[labels[maxIndex]] = softmax[maxIndex];
     }
 
-    // เรียงลำดับตามค่าความน่าจะเป็น
-    var sortedPredictions = Map.fromEntries(predictions.entries.toList()
+    // เรียงลำดับผลลัพธ์ตามค่า probability
+    final sortedPredictions = Map.fromEntries(predictions.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value)));
 
-    print('\nSorted predictions:');
+    print('\nFinal predictions:');
     sortedPredictions.forEach((key, value) {
       print('$key: ${(value * 100).toStringAsFixed(2)}%');
     });

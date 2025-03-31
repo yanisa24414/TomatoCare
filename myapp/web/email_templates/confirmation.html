@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Email Confirmation - TomatoCare</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button {
+            background-color: #7D2424;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .logo {
+            width: 150px;
+            margin: 20px auto;
+            display: block;
+        }
+        .container {
+            background-color: #FDF6E3;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://tomatocarepj.netlify.app/assets/logo3.png" alt="TomatoCare Logo" class="logo">
+        <h2 style="color: #7D2424; text-align: center;">Welcome to TomatoCare!</h2>
+        
+        <p>Hello {{.Email}},</p>
+        
+        <p>Thank you for registering with TomatoCare. To complete your registration, please confirm your email address by clicking the button below:</p>
+        
+        <p style="text-align: center;">
+            <a href="{{.ConfirmLink}}" class="button">Confirm Email</a>
+        </p>
+        
+        <p>If the button above does not work, you can also confirm your email by clicking the following link:</p>
+        <p><a href="{{.ConfirmLink}}">{{.ConfirmLink}}</a></p>
+        
+        <p>If you did not sign up for TomatoCare, please ignore this email.</p>
+        
+        <div class="footer">
+            <p>Best regards,<br>The TomatoCare Team</p>
+        </div>
+    </div>
+</body>
+</html>

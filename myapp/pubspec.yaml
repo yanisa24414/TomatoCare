@@ -48,4 +48,4 @@ flutter:
     - assets/start2.jpg
     - assets/start.jpg
     - assets/logo3.png
-    - assets/my_model.tflite  # เปลี่ยนชื่อโมเดล
+    - assets/keras_tomato_model3.tflite  # เปลี่ยนจาก keras_tomato_model2.tflite

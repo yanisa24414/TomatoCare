@@ -1,6 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io'; // เพิ่มบรรทัดนี้
 import 'package:logging/logging.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:image/image.dart' as img;
+import 'dart:math' as math; // เพิ่ม import นี้
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -33,7 +36,6 @@ class DatabaseHelper {
     required String password,
   }) async {
     try {
-      // Check if enough time has passed since last attempt
       if (_lastRegistrationAttempt != null) {
         final timeDiff = DateTime.now().difference(_lastRegistrationAttempt!);
         if (timeDiff.inSeconds < 30) {
@@ -44,15 +46,15 @@ class DatabaseHelper {
       _lastRegistrationAttempt = DateTime.now();
       _log.info("Starting registration for email: $email");
 
-      // สร้าง auth user โดยไม่ต้องรอการยืนยัน email
+      // สร้าง auth user แบบใช้ default template
       final AuthResponse auth = await client.auth.signUp(
         email: email,
         password: password,
         data: {
           'username': username,
-          'email_confirm': true, // เพิ่มบรรทัดนี้เพื่อข้ามการยืนยัน email
         },
-        emailRedirectTo: null,
+        // แก้ไข redirect URL เป็นแบบ deep link โดยตรง
+        emailRedirectTo: 'tomatolab://auth/email-confirmed',
       );
 
       if (auth.user == null) throw 'Registration failed: No user data received';
@@ -66,23 +68,11 @@ class DatabaseHelper {
         'username': username,
       });
 
-      // ทำการ login อัตโนมัติ
-      if (auth.session != null) {
-        await client.auth.setSession(auth.session!.refreshToken!);
-      }
-
-      _log.info("User registered and logged in successfully");
+      _log.info("User data saved to database");
     } catch (e, stackTrace) {
-      _log.severe("Detailed error: $e");
+      _log.severe("Registration error: $e");
       _log.severe("Stack trace: $stackTrace");
-
-      if (e.toString().contains('over_email_send_rate_limit')) {
-        throw 'Please wait 30 seconds before trying to register again';
-      } else if (e.toString().contains('User already registered')) {
-        throw 'This email is already registered';
-      } else {
-        throw 'Registration failed: ${e.toString()}';
-      }
+      rethrow;
     }
   }
 
@@ -435,6 +425,100 @@ class DatabaseHelper {
         'treatment': 'Error loading data',
         'prevention': 'Error loading data',
       };
+    }
+  }
+
+  Future<Map<String, double>> analyzeImage(File imageFile) async {
+    try {
+      final interpreter =
+          await Interpreter.fromAsset('assets/keras_tomato_model3.tflite');
+
+      // 1. แปลงรูปเป็น input tensor
+      final bytes = await imageFile.readAsBytes();
+      final image = img.decodeImage(bytes);
+      if (image == null) throw Exception('Could not decode image');
+
+      // 2. Resize ภาพเป็น 128x128 และปรับค่าสี
+      final processedImage = img.copyResize(image,
+          width: 128, height: 128, interpolation: img.Interpolation.linear);
+
+      var input = List.generate(
+        1,
+        (i) => List.generate(
+          128,
+          (y) => List.generate(
+            128,
+            (x) => List.generate(
+              3,
+              (c) {
+                final pixel = processedImage.getPixel(x, y);
+                final value = c == 0 ? pixel.r : (c == 1 ? pixel.g : pixel.b);
+                return value / 255.0; // normalize to [0,1] แทน [-1,1]
+              },
+            ),
+          ),
+        ),
+      );
+
+      // 3. รัน inference
+      final outputShape = [1, 10];
+      var output = List.filled(outputShape[0] * outputShape[1], 0.0)
+          .reshape(outputShape);
+      interpreter.run(input, output);
+
+      // 4. แก้ไขลำดับ labels ให้ตรงกับ class indices ที่ใช้ train
+      final labels = [
+        'Bacterial spot', // [0]
+        'Early blight', // [1]
+        'Late blight', // [2]
+        'Leaf Mold', // [3]
+        'Septoria leaf spot', // [4]
+        'Spider mites', // [5]
+        'Target Spot', // [6]
+        'Tomato Yellow Leaf Curl Virus', // [7]
+        'Tomato mosaic virus', // [8]
+        'healthy' // [9]
+      ];
+
+      // Debug: แสดง output ดิบและ probabilities
+      print('\nRaw model output:');
+      for (var i = 0; i < output[0].length; i++) {
+        print('Class $i (${labels[i]}): ${output[0][i]}');
+      }
+
+      // 5. แปลงผลลัพธ์เป็น softmax
+      final results = output[0] as List<double>;
+      final maxVal = results.reduce((curr, next) => curr > next ? curr : next);
+      final exps =
+          results.map((e) => math.exp(e - maxVal)).toList(); // ใช้ math.exp
+      final sum =
+          exps.reduce((a, b) => (a ?? 0) + (b ?? 0))!; // เพิ่ม null check
+      final softmax =
+          exps.map((e) => (e ?? 0) / sum).toList(); // เพิ่ม null check
+
+      // Debug: แสดง probabilities หลัง softmax
+      print('\nProbabilities after softmax:');
+      for (var i = 0; i < labels.length; i++) {
+        print('${labels[i]}: ${(softmax[i] * 100).toStringAsFixed(2)}%');
+      }
+
+      // 6. สร้าง Map ของผลลัพธ์ที่มีค่ามากกว่า 1%
+      final predictions = Map<String, double>.fromIterables(
+        labels,
+        softmax,
+      );
+
+      // Debug log
+      print('Raw model output: $results');
+      print('Softmax probabilities:');
+      predictions
+          .forEach((k, v) => print('$k: ${(v * 100).toStringAsFixed(2)}%'));
+
+      interpreter.close();
+      return predictions;
+    } catch (e) {
+      _log.severe('Error analyzing image: $e');
+      rethrow;
     }
   }
 
